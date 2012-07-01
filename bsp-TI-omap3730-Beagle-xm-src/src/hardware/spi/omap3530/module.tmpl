@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<module name="spi-omap3530">
+	<type>Element</type>
+	<classification>Driver</classification>
+
+	<description>
+		<short>OMAP3530 SPI Driver</short>
+	        <abstract>
+		<![CDATA[The Serial Protocol Interface on the OMAP3530 is protocol compatible 
+with the standard Serial Protocol Interface (SPI). The OMAP3530 BSP 
+support for the SPI (spi-omap3530) supports Full Duplex communication in 
+Master mode. The SPI provides serial communications between the OMAP3530
+CPU core and peripheral devices.]]>
+	        </abstract>
+	</description>
+
+	<supports>
+		<availability>
+				<cpu isa="arm"><byteOrder>le</byteOrder></cpu>
+				<cpu isa="arm"><byteOrder>le.v7</byteOrder></cpu>
+		</availability>
+	</supports>
+
+	<source available="false">
+		<location type="">.</location>
+	</source>
+	<GroupOwner>hw</GroupOwner>
+
+	<contents>
+		<component id="spi-omap3530" generated="true">
+			<location basedir="{cpu}/dll{.:endian}"
+				 runtime="true">spi-omap3530.so</location>
+		</component>
+	</contents>
+
+	<requires>
+		<part build="true" location="lib/spi"/>
+		<part build="false" location="hardware/spi"/>
+	</requires>
+</module>

@@ -1,0 +1,14 @@
+Graphics driver for LCD controller on the TI OMAP35xx board.
+
+Loaded by io-display.
+
+The file "omap35xx.conf" can be used to customize hardware-related
+settings for the devg-omap35xx.so graphics driver, which supports
+the OMAP35xx LCD Controller, which is integrated with the TI 
+OMAP35xx processor.
+
+omap35xx.conf contains comments which describe the various settings
+which may be configured.
+
+
+The path to omap35xx.conf is specified via the modeopts option to io-display.

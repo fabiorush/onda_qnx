@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<module name="deva-ctrl-omap35xx">
+	<type>Element</type>
+	<classification>Driver</classification>
+
+	<description>
+	        <short>Audio Driver for the OMAP35xx</short>
+	        <abstract>
+					<![CDATA[The deva-ctrl-omap35xx shared object is responsible for configuring and operating the OMAP35xx audio devices under the direct control of the QNX Sound Architecture (io-audio).]]>
+	        </abstract>
+	</description>
+
+	<supports>
+	        <availability>
+				<cpu isa="arm"><byteOrder>le</byteOrder></cpu>
+				<cpu isa="arm"><byteOrder>le.v7</byteOrder></cpu>
+	    </availability>
+	</supports>
+
+	<source available="false">
+		<location type="">.</location>
+	</source>
+	<GroupOwner>hw</GroupOwner>
+	<RuntimeComponent>Neutrino RTOS</RuntimeComponent>
+
+	<contents>
+		<component id="omap35xx" generated="true">
+			<location basedir="{os}/{cpu}/dll{.:endian}"
+				 runtime="true">deva-ctrl-omap35xx.so</location>
+		</component>
+	</contents>
+
+	<requires>
+		<part build="false" location="lib/asound"/>
+		<part rootMacro="AUDIO_ROOT" build="true" location="services/audio"/>
+	</requires>
+
+</module>

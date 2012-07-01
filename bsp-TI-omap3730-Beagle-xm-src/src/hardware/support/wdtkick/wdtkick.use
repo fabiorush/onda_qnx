@@ -1,0 +1,10 @@
+%C Watchdog Timer Module for the OMAP3530
+
+Syntax:
+	wdt [options] 
+Options:
+ -p priority  	Define priority of the Watchdog Timer Module event. (default: 10)
+ -t time  		Timeout Period of watchdog timer in milliseconds. (default: 0x40 times the kicktime)
+ -k kicktime  	Time period of kick interval in milliseconds.
+
+ 

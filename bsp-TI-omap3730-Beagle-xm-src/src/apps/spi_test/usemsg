@@ -1,0 +1,4 @@
+%C	- Display a splash screen including uname and network interface information.
+
+Dumps data to the SPI port and reads it back - pseudo loopback.
+

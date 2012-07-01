@@ -1,0 +1,209 @@
+# Initialise the console
+procmgr_symlink ../../proc/boot/libc.so.3 /usr/lib/ldqnx.so.2
+
+display_msg Welcome to QNX Neutrino 6.5 on the Texas Instruments OMAP3730 (ARMv7 Cortex-A8 core) - Beagle Board xM
+
+# Seed hardware resources into the Resource database manager
+resource_seed
+
+display_msg Called Resource Seed, original file startup-boards-omap3730-beagle.build
+
+#######################################################################
+## SERIAL driver
+##
+## Note: The beagle board does not have cts/rts connected so
+##       hardware flow control is disabled.
+#######################################################################
+display_msg Starting serial driver...
+devc-seromap -e -F -p -b115200 -c48000000/16 0x49020000^2,74
+waitfor /dev/ser1 4
+reopen /dev/ser1
+
+# Start some common servers
+slogger &
+pipe &
+
+#######################################################################
+## I2C driver
+##  - Required for both USB and AUDIO
+#######################################################################
+display_msg starting I2C driver...
+
+i2c-omap35xx -a2 -i57 -p0x48072000 --u1
+waitfor /dev/i2c1 4
+
+i2c-omap35xx -a1 -i56 -p0x48070000 --u0
+waitfor /dev/i2c0 4
+
+#######################################################################
+## PMIC(TW4030) power management support utility
+##  - It requires I2C driver
+#######################################################################
+display_msg Configure power management chip
+pmic_tw4030_cfg
+
+#######################################################################
+## RTC driver (TW4030) utility
+##  - It requires I2C driver
+#######################################################################
+display_msg Setting OS Clock from on-board RTC
+#rtc hw /dev/i2c0
+rtc hw tps659xx
+# date
+
+
+#######################################################################
+## AUDIO driver
+##  - Requires the I2C driver to be enabled
+#######################################################################
+display_msg Starting audio driver...
+io-audio -domap35xx-twl4030
+waitfor /dev/snd/pcmC0D1p
+
+
+#######################################################################
+## MMC/SD driver
+##  - Requires the I2C driver to be enabled
+#######################################################################
+display_msg Starting MMC/SD driver...
+devb-mmcsd-beagle cam quiet blk automount=hd0@dos:/fs/hd0,cache=2m mmcsd noac12
+
+waitfor /dev/hd0
+
+# The above mmc init will automount the MMC card; this message just informs
+# the user of that fact.
+display_msg Now mounting MMC/SD as hd0 in filesys as read/write
+#mount -t dos -w /dev/hd0t14 /fs/hd0
+
+#######################################################################
+## SPI driver
+##  - Required for TSC
+#######################################################################
+display_msg Starting SPI driver...
+spi-master -u0 -d omap3530 base=0x480BA000,clock=48000000,irq=48,channel=4,bitrate=125000
+#spi-master -d omap3530
+waitfor /dev/spi0
+
+
+#######################################################################
+## USB OTG Host Controller driver and USB EHCI Host Controller driver
+##  - Requires pmic_tw4030_cfg and I2C to be enabled
+##
+##  - There is an odd power requirement that necessitates creating
+##		then slaying and re-creating the USB driver for it to fucntion.
+#######################################################################
+display_msg Starting USB EHCI Host and OTG host driver...
+#io-usb -vvvvvvv -dehci-omap3 ioport=0x48064800,irq=77,verbose=5 -domap3530-mg ioport=0x480ab000,irq=92,verbose=5
+io-usb -dehci-omap3 ioport=0x48064800,irq=77 -domap3530-mg ioport=0x480ab000,irq=92
+waitfor /dev/io-usb/io-usb 4
+
+slay io-usb
+
+#io-usb -vvvvvvv -dehci-omap3 ioport=0x48064800,irq=77,verbose=5 -domap3530-mg ioport=0x480ab000,irq=92,verbose=5
+io-usb -dehci-omap3 ioport=0x48064800,irq=77 -domap3530-mg ioport=0x480ab000,irq=92
+waitfor /dev/io-usb/io-usb 4
+
+#######################################################################
+## GRAPHICS driver
+#######################################################################
+#display_msg "Setting graphics enviroment variables..."
+#SYSNAME=nto
+#TERM=qansi
+#HOSTNAME=beagleboard-xm
+#HOME=/root
+#PATH=:/proc/boot:/bin:/sbin:/opt/bin:/usr/sbin:/usr/bin:/usr/photon/bin:/tmp
+#LD_LIBRARY_PATH=:/proc/boot:/lib:/usr/lib:/lib/dll:/opt/lib:/usr/photon/lib:/usr/photon/dll:/tmp
+#setconf _CS_LIBPATH /proc/boot:/usr/lib:/lib:/lib/dll:/lib/dll/font:/opt/lib:/usr/photon/lib:/usr/photon/dll:/tmp
+
+PHOTON=/dev/photon
+PHOTON_PATH=/usr/photon
+PHOTON_PATH2=/usr/photon
+PHFONT=/dev/phfont
+MMEDIA_MIDI_CFG=/etc/config/media/midi.cfg
+
+display_msg Starting Graphics driver...
+io-display -dvid=0,did=0
+waitfor /dev/io-display 10
+
+#display_msg Starting Photon...
+#Photon &
+#waitfor /dev/photon 2
+
+#io-graphics &
+#waitfor /dev/phfont 2
+
+#######################################################################
+## SGX GPU driver
+## Note:  the Composition_Manager patch should be installed first
+#######################################################################
+#display_msg Starting SGX GPU driver...
+#GRAPHICS_ROOT=/usr/lib/graphics/omap3730
+#/usr/lib/graphics/omap3730/pvrsrvd
+
+#######################################################################
+## SDIO WIFI driver
+## Note: please insert SDIO WIFI card. and then run ". ./root/wifi.sh"
+#######################################################################
+# required by supplicant
+random -p
+
+#######################################################################
+## These env variables are inherited by all the programs which follow
+#######################################################################
+SYSNAME=nto
+TERM=qansi
+HOME=/
+PATH=:/proc/boot:/sbin:/bin:/usr/sbin:/usr/bin:/opt/bin
+LD_LIBRARY_PATH=:/proc/boot:/lib:/usr/lib:/lib/dll:/opt/lib:/usr/lib/graphics
+
+#######################################################################
+## Watchdog utility
+#######################################################################
+#display_msg "Starting watchdog timer..."
+#wdtkick -t25 -k20
+
+
+#######################################################################
+## Network driver
+#######################################################################
+display_msg Wait for USB to finish enumerating...
+sleep 4
+usb
+
+display_msg Starting network driver...
+io-pkt-v4 -v -dsmsc9500 verbose,mac=02800f117202
+waitfor /dev/io-net/en0 10
+if_up -p en0
+# ifconfig en0 xx.xx.xx.xx
+# or
+display_msg Getting network address with DHCP...
+dhcp.client
+if_up -r 15 en0
+ifconfig en0
+
+
+#######################################################################
+## Network services
+#######################################################################
+display_msg Starting network services...
+devc-pty
+inetd
+
+#######################################################################
+## Momentics remote target service
+#######################################################################
+display_msg Starting qconn service...
+qconn
+
+[+session] sh &
+
+############################################################################
+## Splash screen -- we have two parts to this.  We run egl-gears-lite
+##		at min priority on the top layer and suppress console output.
+##		We then run gf_splash on the bottom layer to display a background
+##		image and network + uname data.
+############################################################################
+display_msg "Starting splash screen and egl-gears-lite..."
+reopen /dev/null
+[pri=1o] egl-gears-lite -layer=2 -width=300 -height=300 &
+/usr/bin/gf_splash -l 1 -f tt0419m_.ttf /usr/share/backdrops/720x400/neutrino_02_720x400.jpg &

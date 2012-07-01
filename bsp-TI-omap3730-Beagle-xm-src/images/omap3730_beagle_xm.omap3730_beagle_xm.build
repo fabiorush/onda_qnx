@@ -1,0 +1,1190 @@
+###########################################################################
+##
+## QNX Neutrino 6.5 on the Texas Instruments OMAP 3730 Board
+##
+###########################################################################
+##
+## SUPPORTED DEVICES:
+##
+## SERIAL:   OMAP UART
+## I2C:      Inter-Integrated Circuit Bus
+## MMC/SD:   MultMediaCard/Secure Digital  
+## USB OTG:   USB OTG Host Controller driver
+## USB EHCI Host: USB EHCI Host Controller driver
+## AUDIO:    Audio Codec on TWL4030
+## GRAPHICS: OMAP3530 output HDMI  
+## SGX:  Experimental support for SGX GPU requires tools patch 
+##
+##  - For detailed instructions on the default example configuration for
+##    these devices see the "CONFIGURING ON-BOARD SUPPORTED HARDWARE"
+##    section below the build script section, or refer to the BSP docs.
+##  - Tip: Each sub-section which relates to a particular device is marked
+##         with its tag (ex. SERIAL). You can use the search features of
+##         your editor to quickly find and add or remove support for
+##         these devices.
+##  - For details on how build files work, please refer to the help
+##    documentation for "mkifs" in the QNX Neutrino "Utilities Reference".
+## 
+###########################################################################
+##
+## NOTES:
+##
+###########################################################################
+
+###########################################################################
+## START OF BUILD SCRIPT
+###########################################################################
+
+[image=0x80100000]
+[+compress]
+
+# For loading with the QNX IPL, uncomment below
+# [virtual=armle-v7,binary] .bootstrap = {
+
+# For loading IFS images with the U-Boot
+[virtual=armle-v7,raw] .bootstrap = {
+	# Startup for Dsplink config 2M.
+        #
+        # Ensure that board revision is set to beagle.
+        #
+	startup-omap3730_beagle_xm -v -L 0x87E00000,0x200000 -v -D8250.0x49020000^2.0.48000000.16 -c1000000000 beagle
+	
+	#######################################################################
+	## PATH set here is the *safe* path for executables.
+	## LD_LIBRARY_PATH set here is the *safe* path for libraries.
+	##     i.e. These are the paths searched by setuid/setgid binaries.
+	##          (confstr(_CS_PATH...) and confstr(_CS_LIBPATH...))
+	#######################################################################
+	PATH=:/proc/boot:/sbin:/bin:/usr/sbin:/usb/bin LD_LIBRARY_PATH=:/proc/boot:/lib:/usr/lib:/lib/dll procnto-instr -v
+}
+[+script] .script = {
+	# Initialise the console
+	procmgr_symlink ../../proc/boot/libc.so.3 /usr/lib/ldqnx.so.2
+
+	display_msg Welcome to QNX Neutrino 6.5 on the Texas Instruments OMAP3730 (ARMv7 Cortex-A8 core) - Beagle Board xM
+	
+	# Seed hardware resources into the Resource database manager 
+	resource_seed
+	
+	display_msg Called Resource Seed, original file startup-boards-omap3730-beagle.build
+		
+	#######################################################################
+	## SERIAL driver
+	##
+	## Note: The beagle board does not have cts/rts connected so
+	##       hardware flow control is disabled.
+	#######################################################################
+	display_msg Starting serial driver...
+	devc-seromap -e -F -p -b115200 -c48000000/16 0x49020000^2,74
+	waitfor /dev/ser1 4
+	reopen /dev/ser1
+
+	# Start some common servers
+	slogger &
+	pipe &
+
+	#######################################################################
+	## I2C driver
+	##  - Required for both USB and AUDIO
+	#######################################################################
+	display_msg starting I2C driver...
+
+	i2c-omap35xx -a2 -i57 -p0x48072000 --u1
+	waitfor /dev/i2c1 4
+
+	i2c-omap35xx -a1 -i56 -p0x48070000 --u0
+	waitfor /dev/i2c0 4
+
+	#######################################################################
+	## PMIC(TW4030) power management support utility
+	##  - It requires I2C driver
+	#######################################################################
+	display_msg Configure power management chip
+	pmic_tw4030_cfg
+
+	#######################################################################
+	## RTC driver (TW4030) utility
+	##  - It requires I2C driver
+	#######################################################################
+	display_msg Setting OS Clock from on-board RTC
+	#rtc hw /dev/i2c0
+	rtc hw tps659xx
+	# date
+
+
+	#######################################################################
+	## AUDIO driver
+	##  - Requires the I2C driver to be enabled
+	#######################################################################
+	display_msg Starting audio driver...
+	io-audio -domap35xx-twl4030
+	waitfor /dev/snd/pcmC0D1p
+
+
+	#######################################################################
+	## MMC/SD driver
+	##  - Requires the I2C driver to be enabled
+	#######################################################################
+	display_msg Starting MMC/SD driver...
+	devb-mmcsd-beagle cam quiet blk automount=hd0@dos:/fs/hd0,cache=2m mmcsd noac12
+
+	waitfor /dev/hd0
+
+	# The above mmc init will automount the MMC card; this message just informs
+	# the user of that fact.
+	display_msg Now mounting MMC/SD as hd0 in filesys as read/write
+	#mount -t dos -w /dev/hd0t14 /fs/hd0
+
+	#######################################################################
+	## SPI driver
+	##  - Required for TSC
+	#######################################################################
+	display_msg Starting SPI driver...
+    spi-master -u0 -d omap3530 base=0x480BA000,clock=48000000,irq=48,channel=4,bitrate=125000
+	#spi-master -d omap3530
+	waitfor /dev/spi0
+
+
+	#######################################################################
+	## USB OTG Host Controller driver and USB EHCI Host Controller driver
+	##  - Requires pmic_tw4030_cfg and I2C to be enabled
+	##
+	##  - There is an odd power requirement that necessitates creating
+	##		then slaying and re-creating the USB driver for it to fucntion.
+	#######################################################################
+	display_msg Starting USB EHCI Host and OTG host driver...
+	#io-usb -vvvvvvv -dehci-omap3 ioport=0x48064800,irq=77,verbose=5 -domap3530-mg ioport=0x480ab000,irq=92,verbose=5
+	io-usb -dehci-omap3 ioport=0x48064800,irq=77 -domap3530-mg ioport=0x480ab000,irq=92
+	waitfor /dev/io-usb/io-usb 4
+
+	slay io-usb
+
+	#io-usb -vvvvvvv -dehci-omap3 ioport=0x48064800,irq=77,verbose=5 -domap3530-mg ioport=0x480ab000,irq=92,verbose=5
+	io-usb -dehci-omap3 ioport=0x48064800,irq=77 -domap3530-mg ioport=0x480ab000,irq=92
+	waitfor /dev/io-usb/io-usb 4
+
+	#######################################################################
+	## GRAPHICS driver
+	#######################################################################
+	#display_msg "Setting graphics enviroment variables..."
+	#SYSNAME=nto
+	#TERM=qansi
+	#HOSTNAME=beagleboard-xm
+	#HOME=/root
+	#PATH=:/proc/boot:/bin:/sbin:/opt/bin:/usr/sbin:/usr/bin:/usr/photon/bin:/tmp
+	#LD_LIBRARY_PATH=:/proc/boot:/lib:/usr/lib:/lib/dll:/opt/lib:/usr/photon/lib:/usr/photon/dll:/tmp
+	#setconf _CS_LIBPATH /proc/boot:/usr/lib:/lib:/lib/dll:/lib/dll/font:/opt/lib:/usr/photon/lib:/usr/photon/dll:/tmp
+
+	PHOTON=/dev/photon
+	PHOTON_PATH=/usr/photon
+	PHOTON_PATH2=/usr/photon
+	PHFONT=/dev/phfont
+	MMEDIA_MIDI_CFG=/etc/config/media/midi.cfg
+
+	display_msg Starting Graphics driver...
+	io-display -dvid=0,did=0
+	waitfor /dev/io-display 10
+
+	#display_msg Starting Photon...
+	#Photon &
+	#waitfor /dev/photon 2
+
+	#io-graphics &
+	#waitfor /dev/phfont 2
+
+	#######################################################################
+	## SGX GPU driver
+	## Note:  the Composition_Manager patch should be installed first
+	#######################################################################
+	#display_msg Starting SGX GPU driver...
+	#GRAPHICS_ROOT=/usr/lib/graphics/omap3730
+	#/usr/lib/graphics/omap3730/pvrsrvd
+
+	#######################################################################
+	## SDIO WIFI driver
+	## Note: please insert SDIO WIFI card. and then run ". ./root/wifi.sh"  
+	#######################################################################
+        # required by supplicant
+        random -p
+	
+	#######################################################################
+	## These env variables are inherited by all the programs which follow
+	#######################################################################
+	SYSNAME=nto
+	TERM=qansi
+	HOME=/
+	PATH=:/proc/boot:/sbin:/bin:/usr/sbin:/usr/bin:/opt/bin
+	LD_LIBRARY_PATH=:/proc/boot:/lib:/usr/lib:/lib/dll:/opt/lib:/usr/lib/graphics
+
+	#######################################################################
+	## Watchdog utility
+	#######################################################################
+	#display_msg "Starting watchdog timer..."
+	#wdtkick -t25 -k20
+
+
+	#######################################################################
+	## Network driver
+	#######################################################################
+        display_msg Wait for USB to finish enumerating...
+	sleep 4
+	usb
+
+	display_msg Starting network driver...
+	io-pkt-v4 -v -dsmsc9500 verbose,mac=02800f117202
+	waitfor /dev/io-net/en0 10
+	if_up -p en0
+    # ifconfig en0 xx.xx.xx.xx
+    # or
+	display_msg Getting network address with DHCP...
+	dhcp.client
+	if_up -r 15 en0
+	ifconfig en0
+
+
+	#######################################################################
+	## Network services
+	#######################################################################
+	display_msg Starting network services...
+	devc-pty
+	inetd
+
+	#######################################################################
+	## Momentics remote target service
+	#######################################################################
+	display_msg Starting qconn service...
+	qconn
+
+	[+session] sh &
+
+	############################################################################
+	## Splash screen -- we have two parts to this.  We run egl-gears-lite
+	##		at min priority on the top layer and suppress console output.
+	##		We then run gf_splash on the bottom layer to display a background
+	##		image and network + uname data.
+	############################################################################
+	display_msg "Starting splash screen and egl-gears-lite..."
+	reopen /dev/null
+	[pri=1o] egl-gears-lite -layer=2 -width=300 -height=300 &
+        /usr/bin/gf_splash -l 1 -f tt0419m_.ttf /usr/share/backdrops/720x400/neutrino_02_720x400.jpg &
+}
+
+# Redirect console messages
+[type=link] /dev/console=/dev/ser1
+[type=link] /tmp=/dev/shmem
+
+# Programs require the runtime linker (ldqnx.so) to be at a fixed location
+
+# Shared libraries
+libc.so
+
+###########################################################################
+## uncomment for legacy binary support (Momentics 6.3.2 and earlier)  
+###########################################################################
+#libc.so.2
+
+## Block device
+libcam.so
+io-blk.so
+cam-disk.so
+fs-qnx4.so
+fs-dos.so
+
+###########################################################################
+## uncomment for USB driver
+###########################################################################
+libusbdi.so
+devu-omap3530-mg.so
+devu-ehci-omap3.so
+
+###########################################################################
+## uncomment for SPI
+###########################################################################
+ spi-omap3530.so
+
+###########################################################################
+## uncomment for graphics driver
+###########################################################################
+devg-omap35xx.so
+libGLES_CL.so
+libGLES_CM.so
+libffb.so
+libgf.so
+devg-soft3d-fixed.so
+libm.so.2
+devg-soft3d.so
+lib/libFF-T2K.so.3=libFF-T2K.so.3
+
+###########################################################################
+## SGX support
+## Note:  the Composition_Manager patch must be installed for SGX support
+##   Refer to the BSP release notes for how to install the patch into the BSP.
+###########################################################################
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/libglslcompiler.so=libglslcompiler.so
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/libIMGegl.so=libIMGegl.so
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/libImgGLESv1_CM.so=libImgGLESv1_CM.so
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/libImgGLESv2.so=libImgGLESv2.so
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/libImgOpenVG.so=libImgOpenVG.so
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/libpvr2d.so=libpvr2d.so
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/libsrv_um.so=libsrv_um.so
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/libWFDdevg.so=libWFDdevg.so
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/pvrsrvinit.so=pvrsrvinit.so
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/wsegl-gf.so=wsegl-gf.so
+
+
+###########################################################################
+## The following libraries are taken from the Composition_Manager patch.
+##   Refer to the BSP release notes for how to install the patch into the BSP.
+###########################################################################
+#/usr/lib/graphics/devg/libEGLdevg.so=/home/qa/patches/650-2258/target/qnx6/armle-v7/usr/lib/graphics/devg/libEGLdevg.so
+#/usr/lib/graphics/devg/libWFDdevg.so=/home/qa/patches/650-2258/target/qnx6/armle-v7/usr/lib/graphics/devg/libWFDdevg.so
+#/usr/lib/graphics/devg/libGLESv1_CMdevg.so=/home/qa/patches/650-2258/target/qnx6/armle-v7/usr/lib/graphics/devg/libGLESv1_CMdevg.so
+#/usr/lib/graphics/devg/libGLESv1_CLdevg.so=/home/qa/patches/650-2258/target/qnx6/armle-v7/usr/lib/graphics/devg/libGLESv1_CLdevg.so
+
+/usr/lib/libOpenVG.so.1=${QNX_TARGET}/armle-v7/usr/lib/libOpenVG.so.1
+/usr/lib/libGLESv2.so.1=${QNX_TARGET}/armle-v7/usr/lib/libGLESv2.so.1
+libiow.so.1
+libGLESv1_CM.so.1
+libGLESv1_CL.so.1
+libEGL.so.1
+
+###########################################################################
+## uncomment for AUDIO driver
+###########################################################################
+deva-ctrl-omap35xx-twl4030.so
+libasound.so.2
+
+###########################################################################
+## uncomment for network driver
+###########################################################################
+devn-asix.so
+libsocket.so
+devn-smsc9500.so
+devnp-shim.so
+
+###########################################################################
+## Debug support libraries
+###########################################################################
+# Memory Analysis
+/usr/lib/librcheck.so=librcheck.so
+# Mudflap (threaded)
+[-autolink] /lib/libmudflapth.so.0.0.0=libmudflapth.so.0.0.0
+[type=link -autolink] /lib/libmudflapth.so.0=libmudflapth.so.0.0.0
+# Mudflap (unthreaded)
+#[-autolink] /lib/libmudflap.so.0.0.0=libmudflap.so.0.0.0
+#[type=link -autolink] /lib/libmudflap.so.0=libmudflap.so.0.0.0
+# work around IDE bug (above lines disable autolink globally in IDE), fix is noop in mkifs
+[+autolink]
+
+###########################################################################
+## uncomment for WIFI driver
+###########################################################################
+#devnp-mv8686.so
+libcrypto.so.1
+libssl.so.1
+libsdio.so.1
+libcam.so.2
+libm.so.2
+libz.so.2
+
+# Executables
+[data=c]
+devc-seromap
+
+###########################################################################
+## RTC
+###########################################################################
+rtc
+date
+
+###########################################################################
+## Network services (telnet) support
+##########################################################################
+/usr/sbin/inetd=inetd
+/usr/sbin/telnetd=telnetd
+/usr/sbin/ftpd=ftpd
+/bin/login=login
+#/usr/bin/passwd=passwd
+#[type=link] /etc/.pwlock=/tmp/.pwlock
+[type=link] /var/log=/tmp
+[type=link] /var/run=/tmp
+[type=link] /var/lock=/tmp
+devc-pty
+
+#
+# NOTE: The following is very insecure and must not be used in a production
+#       environment.  This allows telnet access to root without a password!
+#       Even with a password this is not secure as telnet passes the password
+#       unencrypted over the network.  NO NOT USE THIS IN AN UNSECURED ENVIRONMENT!
+#       This configuration is only meant for initial setup and testing of a new board.
+#       If you need network access use a secure protocol like ssh (e.g. OpenSSH or Drop Bear).
+#
+/etc/inetd.conf = {
+telnet stream tcp nowait root /usr/sbin/telnetd in.telnetd
+ftp stream tcp nowait root /usr/sbin/ftpd in.ftpd -l
+#shell stream tcp nowait root /bin/rshd in.rshd
+#login stream tcp nowait root /bin/rlogind in.rlogind
+#tftp dgram udp wait ftp /bin/tftpd in.tftpd
+}
+/etc/passwd=${QNX_TARGET}/etc/passwd
+/etc/group=${QNX_TARGET}/etc/group
+
+/etc/hosts=${QNX_TARGET}/etc/hosts
+/etc/services=${QNX_TARGET}/etc/services
+/etc/motd=${QNX_TARGET}/etc/motd
+/etc/esh = {
+}
+
+/etc/ftpusers = {
+root deny
+}
+[type=link] /home/ftp=/tmp
+
+###########################################################################
+## uncomment for SD driver
+###########################################################################
+devb-mmcsd-beagle
+
+###########################################################################
+## uncomment for USB driver
+###########################################################################
+io-usb
+usb
+devb-umass
+
+###########################################################################
+## Network driver
+###########################################################################
+io-pkt-v4
+[search=${QNX_TARGET}/armle-v7/usr/sbin] /usr/sbin/dhcp.client=dhcp.client
+[type=link] /etc/resolv.conf=/tmp/resolv.conf
+
+/usr/sbin/if_up=if_up
+/sbin/ifconfig=ifconfig
+/usr/sbin/nicinfo=nicinfo
+/usr/bin/ping=ping
+/usr/bin/netstat=netstat
+/sbin/route=route
+/bin/hostname=hostname
+
+/usr/bin/ftp=ftp
+fs-nfs2
+fs-nfs3
+
+###########################################################################
+## uncomment for I2C driver
+###########################################################################
+i2c-omap35xx
+
+###########################################################################
+## uncomment for SPI driver
+###########################################################################
+spi-master
+
+###########################################################################
+## Power management utility
+###########################################################################
+pmic_tw4030_cfg
+
+###########################################################################
+## uncomment for AUDIO driver
+###########################################################################
+io-audio
+wave
+waverec
+mix_ctl
+
+###########################################################################
+## uncomment for Graphics driver
+###########################################################################
+vsync
+egl-gears-lite
+io-display
+
+[search=../install/etc/system/config] /etc/system/config/display.conf=display.conf
+[search=../install/etc/system/config] /etc/system/config/omap35xx.conf=omap35xx.conf
+
+/etc/system/config/img.conf ={
+[img_codec_jpg.so]
+mime=image/jpeg:image/jpg:image/jp_:application/jpg:application/x-jpg:image/pjpeg:image/pipeg:image/vnd.swiftview-jpeg:image/x-xbitmap
+ext=jpg:jpeg
+}
+
+##########################################################################
+## Splash screen binary and support files (fonts & images)
+###########################################################################
+/usr/bin/gf_splash=gf_splash
+
+#/usr/photon/font_repository/fontdir=${QNX_TARGET}/usr/photon/font_repository/fontdir
+#/usr/photon/font_repository/fontext=${QNX_TARGET}/usr/photon/font_repository/fontext
+#/usr/photon/font_repository/fontmap=${QNX_TARGET}/usr/photon/font_repository/fontmap
+/usr/photon/font_repository/tt0419m_.ttf=${QNX_TARGET}/usr/photon/font_repository/tt0419m_.ttf
+#/usr/photon/font_repository/tt0583m_.ttf=${QNX_TARGET}/usr/photon/font_repository/tt0583m_.ttf
+#/usr/photon/font_repository/tt0611m_.ttf=${QNX_TARGET}/usr/photon/font_repository/tt0611m_.ttf
+#/usr/photon/font_repository/tt0582m_.ttf=${QNX_TARGET}/usr/photon/font_repository/tt0582m_.ttf
+
+#[search=../install/usr/share/backdrops/1024x768] /usr/share/backdrops/1024x768/neutrino_02_1024x768.jpg=neutrino_02_1024x768.jpg
+#[search=../install/usr/share/backdrops/1024x768] /usr/share/backdrops/1024x768/default.jpg=default.jpg
+[search=../install/usr/share/backdrops/480x272] /usr/share/backdrops/480x272/neutrino_02_480x272.jpg=neutrino_02_480x272.jpg
+[search=../install/usr/share/backdrops/720x400] /usr/share/backdrops/720x400/neutrino_02_720x400.jpg=neutrino_02_720x400.jpg
+
+
+###########################################################################
+## uncomment for SGX Graphics driver
+##   The composition manager patch must be installed to use thse binaries.
+###########################################################################
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/graphics.conf=graphics.conf
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/pvrsrvd=pvrsrvd
+# Graphics demo apps
+#/usr/bin/gles1-egl-gears-lite=/home/qa/graphic_driver_test/Patches/winmgr/armle-v7/usr/bin/gles1-egl-gears-lite
+#/usr/bin/gles2-egl-gears=/home/qa/graphic_driver_test/Patches/winmgr/armle-v7/usr/bin/gles2-egl-gears
+#/usr/bin/vg-egl-tiger=/home/qa/graphic_driver_test/Patches/winmgr/armle-v7/usr/bin/vg-egl-tiger
+
+###########################################################################
+## Image Loading
+###########################################################################
+libimg.so
+# img_codec_bmp.so
+# img_codec_gif.so
+img_codec_jpg.so
+# img_codec_png.so
+# img_codec_sgi.so
+# img_codec_tga.so
+
+###########################################################################
+## Font Loading
+###########################################################################
+libFF-T2K.so
+
+
+devb-ram
+fdisk
+mkdosfs
+random
+fs-nfs2
+dhcp.client
+resource_seed
+
+###########################################################################
+## Momentics IDE remote target debug binaries and tracelogger
+###########################################################################
+/usr/sbin/qconn=qconn
+/usr/bin/pdebug=pdebug
+/usr/sbin/tracelogger=tracelogger
+
+###########################################################################
+## Watchdog timer command
+###########################################################################
+/usr/bin/wdtkick=wdtkick
+
+###########################################################################
+## General commands
+###########################################################################
+/bin/ls=ls
+/bin/cp=cp
+/bin/mv=mv
+/bin/rm=rm
+/bin/ln=ln
+/bin/cat=cat
+/bin/more=more
+/bin/mount=mount
+/bin/umount=umount
+/bin/df=df
+/bin/chmod=chmod
+/usr/bin/grep=grep
+/usr/bin/top=top
+/usr/bin/id=id
+find
+/bin/ksh=ksh
+[type=link] /bin/sh=/bin/ksh
+pipe
+pidin
+uname
+slogger
+sloginfo
+slay
+waitfor
+shutdown
+sleep
+use
+
+###########################################################################
+## SPI libraries
+###########################################################################
+[data=copy] /proc/boot/spi_test = spi_test
+
+###########################################################################
+## END OF BUILD SCRIPT
+###########################################################################
+
+###########################################################################
+##
+## CONFIGURING ON-BOARD SUPPORTED HARDWARE:
+##
+##-------------------------------------------------------------------------
+##
+## SERIAL: OMAP UART
+##   example buildfile commands:
+##   devc-seromap -e -F -b115200 -c48000000/16 0x49020000^2,74
+##     waitfor /dev/ser1
+##     reopen /dev/ser1
+##
+##   required binaries:
+##     devc-seromap
+##
+##-------------------------------------------------------------------------
+##
+## MMC/SD: 
+##   example buildfile commands:
+##   devb-mmcsd-beagle cam quiet blk cache=2m mmcsd noac12
+##
+##   required binaries:
+##     devb-mmcsd-beagle
+##
+##   NOTE: i2c is required for MMC operation and should be started before MMC.
+##
+##-------------------------------------------------------------------------
+##
+## I2C:     Inter-Integrated Circuit Bus
+##   example buildfile commands:
+##     i2c-omap35xx
+##
+##   required binaries:
+##     i2c-omap35xx
+##
+##-------------------------------------------------------------------------
+##
+## AUDIO:   Audio codec on the TWL4030 (playback and capture support)
+##
+##   example buildfile commands:
+##     io-audio -domap35xx-twl4030
+##
+##   required libraries:
+##     deva-ctrl-omap35xx-twl4030.so
+##     libasound.so
+##     
+##   required binaries:
+##     resource_seed
+##     io-audio
+##
+##   NOTE: resource_seed and pmic_tw4030_cfg must be run before io-audio
+##
+##-------------------------------------------------------------------------
+##
+## USB EHCI:     USB EHCI HOST driver
+##   example buildfile commands:
+##     	io-usb -dehci-omap3 ioport=0x48064800,irq=77,verbose=5 
+##
+##   required binaries:
+##     	devu-ehci-omap3.so
+##		libusbdi.so
+##		io-usb
+##		usb
+##
+##   NOTE: pmic_tw4030_cfg must be run before io-usb for the EHCI driver
+##
+##-------------------------------------------------------------------------
+##
+## USB OTG:     USB OTG HOST driver
+##   example buildfile commands:
+##      io-usb -domap3530-mg ioport=0x480ab000,irq=92
+##
+##   required binaries:
+##              devu-omap3530-mg.so
+##		libusbdi.so
+##		io-usb
+##		usb
+##
+##  NOTE: For OTG to function properly, beagle board must be reset with the
+##        USER button held down to force it to attempt to boot from USB and
+##        configure the OTG.
+##		
+##-------------------------------------------------------------------------
+##
+## GRAPHICS: OMAP3530 output HDMI
+##   example buildfile commands:
+##              io-display  -dvid=0,did=0
+##
+##   required binaries:
+##              devg-omap35xx.so
+##              libGLES_CL.so
+##              libffb.so
+##              libgf.so
+##              devg-soft3d-fixed.so
+##              libFF-T2K.so.2
+##              libGLES_CM.so
+##              libm.so.2
+##              devg-soft3d.so
+##
+##   The following configuration file is required to initialize the
+##   display device:
+##
+##     /etc/system/config/omap35xx.conf=omap35xx.conf
+##     /etc/system/config/display.conf={
+##       device \{
+##         drivername=omap35xx
+##         vid=0
+##         did=0
+##         modeopts=/etc/system/config/omap35xx.conf
+##         display \{
+##           xres=720
+##           yres=400
+##           refresh=60
+##           pixel_format=rgb565
+##        \}
+##      \}
+##     }
+##
+##-------------------------------------------------------------------------
+##
+## SGX GPU SUPPORT
+##   Please refer to the Beagle BSP Release notes for how to install
+##   the composition manager patch, which supplies many of the required
+##   libraries and binaries.
+##
+##   example buildfile commands:
+##     GRAPHICS_ROOT=/usr/lib/graphics/omap3730
+##     /usr/lib/graphics/omap3730/pvrsrvd
+##
+##   The following configuration file is required to initialize the
+##   display device:
+##     /usr/lib/graphics/omap3730/graphics.conf
+##
+##   required binaries:
+##     pvrsrvd
+##     gles1-egl-gears
+##     libglslcompiler.so
+##     libIMGegl.so
+##     libImgGLESv1_CM.so
+##     libImgGLESv2.so
+##     libImgOpenVG.so
+##     libpvr2d.so
+##     libsrv_um.so
+##     libWFDdevg.so
+##     pvrsrvinit.so
+##     wsegl-gf.so
+##     libEGLdevg.so
+##     libWFDdevg.so
+##     libGLESv1_CLdevg.so
+##     libGLESv1_CMdevg.so
+##     libiow.so.1
+##     libGLESv1_CM.so.1
+##     libGLESv1_CL.so.1
+##     libEGL.so.1
+##
+##-------------------------------------------------------------------------
+##
+## WIFI:
+##   Please refer to the WIFI_HOW_TO_RUN.txt file within the BSP for
+##   instructions on configuring the WIFI.
+##
+###########################################################################
+
+###########################################################################
+##
+## INTERRUPT MAP
+##
+###########################################################################
+##
+## vector:   0
+## trigger:  level
+## device:   EMUINT (MPU emulation)
+##
+## vector:   1
+## trigger:  level
+## device:   COMMTX (MPU emulation)
+##
+## vector:   2
+## trigger:  level
+## device:   COMMRX (MPU emulation)
+##
+## vector:   3 
+## trigger:  level
+## device:   BENCH (MPU emulation)
+##
+## vector:   4
+## trigger:  level
+## device:   MCBSP2_ST_IRQ (Sidetone MCBSP2 overflow)
+##
+## vector:   5
+## trigger:  level
+## device:   MCBSP3_ST_IRQ (Sidetone MCBSP3 overflow)
+##
+## vector:   6
+## trigger:  level
+## device:   SSM_ABORT_IRQ (MPU subsystem secure state-machine abort)
+##
+## vector:   7
+## trigger:  level
+## device:   sys_nirq (External source - active low)
+##
+## vector:   8
+## trigger:  N/A
+## device:   Reserved
+##
+## vector:   9
+## trigger:  level
+## device:   SMX_DBG_IRQ (SMX error for debug)
+##
+## vector:   10
+## trigger:  level
+## device:   SMX_APP_IRQ SMX error for application
+##
+## vector:   11
+## trigger:  level
+## device:   PRCM_MPU_IRQ PRCM module IRQ
+##
+## vector:   12
+## trigger:  level
+## device:   SDMA_IRQ0 System DMA request 0
+##
+## vector:   13
+## trigger:  level
+## device:   SDMA_IRQ1 System DMA request 1
+##
+## vector:   14
+## trigger:  level
+## device:   SDMA_IRQ2 System DMA request 2
+##
+## vector:   15
+## trigger:  level
+## device:   SDMA_IRQ3 System DMA request 3
+##
+## vector:   16
+## trigger:  level
+## device:   MCBSP1_IRQ McBSP module 1 IRQ
+##
+## vector:   17
+## trigger:  level
+## device:   MCBSP2_IRQ McBSP module 2 IRQ
+##
+## vector:   18
+## trigger:  level
+## device:   SR1_IRQ SmartReflex 1
+##
+## vector:   19
+## trigger:  level
+## device:   SR2_IRQ SmartReflex 2
+##
+## vector:   20
+## trigger:  level
+## device:   GPMC_IRQ General-purpose memory controller module
+##
+## vector:   21
+## trigger:  level
+## device:   SGX_IRQ 2D/3D graphics module
+##
+## vector:   22
+## trigger:  level
+## device:   MCBSP3_IRQ McBSP module 3
+##
+## vector:   23
+## trigger:  level
+## device:   MCBSP4_IRQ McBSP module 4
+##
+## vector:   24
+## trigger:  level
+## device:   CAM_IRQ0 Camera interface request 0
+##
+## vector:   25
+## trigger:  level
+## device:   DSS_IRQ Display subsystem module
+##
+## vector:   26
+## trigger:  level
+## device:   MAIL_U0_MPU_IRQ Mailbox user 0 request
+##
+## vector:   27
+## trigger:  level
+## device:   MCBSP5_IRQ McBSP module 5
+##
+## vector:   28
+## trigger:  level
+## device:   IVA2_MMU_IRQ IVA2 MMU
+##
+## vector:   29
+## trigger:  level
+## device:   GPIO1_MPU_IRQ GPIO module 1
+##
+## vector:   30
+## trigger:  level
+## device:   GPIO2_MPU_IRQ GPIO module 2
+##
+## vector:   31
+## trigger:  level 
+## device:   GPIO3_MPU_IRQ GPIO module 3
+##
+## vector:   32
+## trigger:  level
+## device:   GPIO4_MPU_IRQ GPIO module 4
+##
+## vector:   33
+## trigger:  level
+## device:   GPIO5_MPU_IRQ GPIO module 5
+##
+## vector:   34
+## trigger:  level
+## device:   GPIO6_MPU_IRQ GPIO module 6
+##
+## vector:   35
+## trigger:  level
+## device:   USIM_IRQ USIM interrupt (HS devices only)
+##
+## vector:   36
+## trigger:  level
+## device:   WDT3_IRQ Watchdog timer module 3 overflow
+##
+## vector:   37
+## trigger:  level
+## device:   GPT1_IRQ General-purpose timer module 1 
+##
+## vector:   38
+## trigger:  level
+## device:   GPT2_IRQ General-purpose timer module 2
+##
+## vector:   39
+## trigger:  level
+## device:   GPT3_IRQ General-purpose timer module 3
+##
+## vector:   40
+## trigger:  level
+## device:   GPT4_IRQ General-purpose timer module 4
+##
+## vector:   41
+## trigger:  level
+## device:   GPT5_IRQ General-purpose timer module 5
+##
+## vector:   42
+## trigger:  level
+## device:   GPT6_IRQ General-purpose timer module 6
+##
+## vector:   43
+## trigger:  level
+## device:   GPT7_IRQ General-purpose timer module 7
+##
+## vector:   44
+## trigger:  level
+## device:   GPT8_IRQ General-purpose timer module 8
+##
+## vector:   45
+## trigger:  level
+## device:   GPT9_IRQ General-purpose timer module 9
+##
+## vector:   46
+## trigger:  level
+## device:   GPT10_IRQ General-purpose timer module 10
+##
+## vector:   47
+## trigger:  level
+## device:   GPT11_IRQ General-purpose timer module 11
+##
+## vector:   48
+## trigger:  level
+## device:   SPI4_IRQ McSPI module 4
+##
+## vector:   49
+## trigger:  level
+## device:   SHA1MD5_IRQ2 SHA-1/MD5 crypto-accelerator 2 (HS devices only)
+##
+## vector:   50
+## trigger:  N/A
+## device:   FPKA_IRQREADY_N PKA crypto-accelerator (HS devices only)
+##
+## vector:   51
+## trigger:  level
+## device:   SHA2MD5_IRQ SHA-2/MD5 crypto-accelerator 1 (HS devices only)
+##
+## vector:   52
+## trigger:  level
+## device:   RNG_IRQ RNG module (HS devices only)
+##
+## vector:   53
+## trigger:  level
+## device:   MG_IRQ MG function
+##
+## vector:   54
+## trigger:  level
+## device:   MCBSP4_IRQ_TX McBSP module 4 transmit
+##
+## vector:   55
+## trigger:  level
+## device:   MCBSP4_IRQ_RX McBSP module 4 receive
+##
+## vector:   56
+## trigger:  level
+## device:   I2C1_IRQ I2C module 1
+##
+## vector:   57
+## trigger:  level
+## device:   I2C2_IRQ I2C module 2
+##
+## vector:   58
+## trigger:  level
+## device:   HDQ_IRQ HDQ/One-wire
+##
+## vector:   59
+## trigger:  level
+## device:   McBSP1_IRQ_TX McBSP module 1 transmit
+##
+## vector:   60
+## trigger:  level
+## device:   McBSP1_IRQ_RX McBSP module 1 receive
+##
+## vector:   61
+## trigger:  level 
+## device:   I2C3_IRQ I2C module 3
+##
+## vector:   62
+## trigger:  level
+## device:   McBSP2_IRQ_TX McBSP module 2 transmit
+##
+## vector:   63
+## trigger:  level
+## device:   McBSP2_IRQ_RX McBSP module 2 receive
+##
+## vector:   64
+## trigger:  level
+## device:   FPKA_IRQRERROR_N PKA crypto-accelerator (HS devices only)
+##
+## vector:   65
+## trigger:  level
+## device:   SPI1_IRQ McSPI module 1
+##
+## vector:   66
+## trigger:  level
+## device:   SPI2_IRQ McSPI module 2
+##
+## vector:   67
+## trigger:  level
+## device:   RESERVED
+##
+## vector:   68
+## trigger:  level
+## device:   RESERVED
+##
+## vector:   69
+## trigger:  level
+## device:   RESERVED
+##
+## vector:   70 
+## trigger:  level
+## device:   RESERVED
+##
+## vector:   71
+## trigger:  level
+## device:   RESERVED
+##
+## vector:   72
+## trigger:  level
+## device:   UART1_IRQ UART module 1
+##
+## vector:   73
+## trigger:  level
+## device:   UART2_IRQ UART module 2
+##
+## vector:   74
+## trigger:  level 
+## device:   UART3_IRQ UART module 3 (also infrared)
+##
+## vector:   75
+## trigger:  level
+## device:   PBIAS_IRQ Merged interrupt for PBIASlite1 and 2
+##
+## vector:   76
+## trigger:  level
+## device:   OHCI_IRQ OHCI controller HSUSB MP Host Interrupt
+##
+## vector:   77
+## trigger:  level
+## device:   EHCI_IRQ EHCI controller HSUSB MP Host Interrupt
+##
+## vector:   78
+## trigger:  level
+## device:   TLL_IRQ HSUSB MP TLL Interrupt
+##
+## vector:   79
+## trigger:  level
+## device:   PARTHASH_IRQ SHA2/MD5 crypto-accelerator 1 (HS devices only)
+##
+## vector:   80
+## trigger:  level
+## device:   RESERVED
+##
+## vector:   81
+## trigger:  level
+## device:   MCBSP5_IRQ_TX McBSP module 5 transmit
+##
+## vector:   82
+## trigger:  level
+## device:   MCBSP5_IRQ_RX McBSP module 5 receive
+##
+## vector:   83
+## trigger:  level
+## device:   MMC1_IRQ MMC/SD module 1
+##
+## vector:   84
+## trigger:  level
+## device:   MS_IRQ MS-PRO module
+##
+## vector:   85
+## trigger:  level
+## device:   RESERVED
+##
+## vector:   86
+## trigger:  level
+## device:   MMC2_IRQ MMC/SD module 2
+##
+## vector:   87
+## trigger:  level
+## device:   MPU_ICR_IRQ MPU ICR
+##
+## vector:   88
+## trigger:  level
+## device:   RESERVED 
+##
+## vector:   89
+## trigger:  level
+## device:   MCBSP3_IRQ_TX McBSP module 3 transmit
+##
+## vector:   90
+## trigger:  level
+## device:   MCBSP3_IRQ_RX McBSP module 3 receive 
+##
+## vector:   91
+## trigger:  level
+## device:   SPI3_IRQ McSPI module 3
+##
+## vector:   92
+## trigger:  level
+## device:   HSUSB_MC_NINT High-Speed USB OTG controller 
+##
+## vector:   93
+## trigger:  level
+## device:   HSUSB_DMA_NINT High-Speed USB OTG DMA controller
+##
+## vector:   94
+## trigger:  level
+## device:   MMC3_IRQ MMC/SD module 3 
+##
+## vector:   95
+## trigger:  level
+## device:   GPT12_IRQ General-purpose timer module 12
+##
+###########################################################################
+##
+## GPIO module 6 Interrupts
+##
+## vector:  160 - 191 (GPIO 160 - 191)
+## trigger: user defined
+## device:
+##
+###########################################################################
+##
+## SDMA 3 interrupt
+##
+## vector:  256 - 287 (dma channel 0 - 31)
+## trigger: user defined
+## device:
+##
+###########################################################################
+

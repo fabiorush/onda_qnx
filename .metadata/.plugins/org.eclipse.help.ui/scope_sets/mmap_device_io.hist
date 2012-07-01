@@ -1,0 +1,4 @@
+#Mon May 14 16:35:32 BRT 2012
+__DEFAULT__=false
+org.eclipse.help.ui.localSearch.master=true
+expression=mmap_device_io

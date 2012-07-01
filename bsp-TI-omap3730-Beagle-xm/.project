@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>bsp-TI-omap3730-Beagle-xm</name>
+	<comment>QNX System Builder Project</comment>
+	<projects>
+		<project>bsp-TI-omap3730-Beagle-xm-src</project>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>com.qnx.tools.ide.builder.core.SystemBuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>com.qnx.tools.ide.builder.ui.QNXSystemBuilderNature</nature>
+	</natures>
+</projectDescription>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<QdeProjectsBuildInfo>
+<qdeBuildInfo IMemento.internal.id="C:/ide-4.7-workspace/Teste" buildConfig="_armle-v7_r" projectName="Teste">
+<srcDirs>
+<element>C:/ide-4.7-workspace/Teste/arm/o-le-v7</element>
+<element>C:/ide-4.7-workspace/Teste/arm</element>
+<element>C:/ide-4.7-workspace/Teste</element>
+</srcDirs>
+<libDirs>
+<element>C:/ide-4.7-workspace/Teste/arm/o-le-v7</element>
+<element>C:/QNX650/target/qnx6/armle-v7/lib</element>
+<element>C:/QNX650/target/qnx6/armle-v7/usr/lib</element>
+</libDirs>
+<incDirs>
+<element>C:/QNX650/target/qnx6/usr/include</element>
+<element>C:/ide-4.7-workspace/Teste/arm/o-le-v7</element>
+<element>C:/ide-4.7-workspace/Teste/arm</element>
+<element>C:/ide-4.7-workspace/Teste</element>
+</incDirs>
+<libs/>
+<SRCS>
+<element>C:/ide-4.7-workspace/Teste/Teste.c</element>
+</SRCS>
+</qdeBuildInfo>
+</QdeProjectsBuildInfo>

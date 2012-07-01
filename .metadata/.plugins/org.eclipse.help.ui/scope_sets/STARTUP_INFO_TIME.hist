@@ -1,0 +1,4 @@
+#Wed May 16 11:12:10 BRT 2012
+__DEFAULT__=false
+org.eclipse.help.ui.localSearch.master=true
+expression=STARTUP_INFO_TIME

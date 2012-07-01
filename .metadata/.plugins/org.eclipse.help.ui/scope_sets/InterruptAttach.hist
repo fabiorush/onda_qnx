@@ -1,0 +1,4 @@
+#Sat Jun 09 13:22:29 BRT 2012
+__DEFAULT__=false
+org.eclipse.help.ui.localSearch.master=true
+expression=InterruptAttach

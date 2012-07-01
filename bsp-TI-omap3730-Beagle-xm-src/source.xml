@@ -1,0 +1,14 @@
+<!-- Unless otherwise specified, values/attributes are free-form strings -->
+    <!-- type is currently either BSP or SourceOnly -->
+<sourcePackage type="BSP" id="bsp-TI-omap3730-Beagle-xm">
+    <title>Ti-OMAP3730-Beagle-xM</title>
+    <release>1.0.4</release>
+    <description>This package contains the source and build files for targeting QNX/Neutrino on the OMAP3730 BeagleBoard xM.</description>
+    <vendor>MPC Data</vendor>
+    <qnxTargetVersion>6.5</qnxTargetVersion>
+    <qnxTargetCPU variant="armle.v7">ARM</qnxTargetCPU>
+    <!-- type is currently only import, will be extended in the future. -->
+    <bsp type="import">
+		<import>src/hardware/startup/boards/omap3730_beagle_xm/omap3730_beagle_xm.build</import>
+    </bsp>
+</sourcePackage>

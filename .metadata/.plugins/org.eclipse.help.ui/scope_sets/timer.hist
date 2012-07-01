@@ -1,0 +1,4 @@
+#Tue May 15 23:22:22 BRT 2012
+__DEFAULT__=false
+org.eclipse.help.ui.localSearch.master=true
+expression=timer

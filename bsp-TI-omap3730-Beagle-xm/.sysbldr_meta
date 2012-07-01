@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<builder-project-properties>
+    <search-path type="binary" path="WORKSPACE/bsp-TI-omap3730-Beagle-xm-src/install/PLATFORM/bin"/>
+    <search-path type="binary" path="WORKSPACE/bsp-TI-omap3730-Beagle-xm-src/install/PLATFORM/sbin"/>
+    <search-path type="binary" path="WORKSPACE/bsp-TI-omap3730-Beagle-xm-src/install/PLATFORM/usr/bin"/>
+    <search-path type="binary" path="WORKSPACE/bsp-TI-omap3730-Beagle-xm-src/install/PLATFORM/usr/sbin"/>
+    <search-path type="binary" path="WORKSPACE/bsp-TI-omap3730-Beagle-xm-src/install/PLATFORM/usr/photon/bin"/>
+    <search-path type="binary" path="Overrides/IMAGE"/>
+    <search-path type="binary" path="Overrides"/>
+    <search-path type="binary" path="QNX_TARGET/PLATFORM/bin"/>
+    <search-path type="binary" path="QNX_TARGET/PLATFORM/sbin"/>
+    <search-path type="binary" path="QNX_TARGET/PLATFORM/usr/bin"/>
+    <search-path type="binary" path="QNX_TARGET/PLATFORM/usr/sbin"/>
+    <search-path type="binary" path="QNX_TARGET/PLATFORM/usr/photon/bin"/>
+    <search-path type="dll"    path="WORKSPACE/bsp-TI-omap3730-Beagle-xm-src/install/PLATFORM/lib/dll"/>
+    <search-path type="dll"    path="WORKSPACE/bsp-TI-omap3730-Beagle-xm-src/install/PLATFORM/usr/photon/dll"/>
+    <search-path type="dll"    path="Overrides/IMAGE"/>
+    <search-path type="dll"    path="Overrides"/>
+    <search-path type="dll"    path="QNX_TARGET/PLATFORM/lib/dll"/>
+    <search-path type="dll"    path="QNX_TARGET/PLATFORM/usr/photon/dll"/>
+    <search-path type="shlib"  path="WORKSPACE/bsp-TI-omap3730-Beagle-xm-src/install/PLATFORM/lib"/>
+    <search-path type="shlib"  path="WORKSPACE/bsp-TI-omap3730-Beagle-xm-src/install/PLATFORM/usr/lib"/>
+    <search-path type="shlib"  path="WORKSPACE/bsp-TI-omap3730-Beagle-xm-src/install/PLATFORM/usr/photon/lib"/>
+    <search-path type="shlib"  path="Overrides/IMAGE"/>
+    <search-path type="shlib"  path="Overrides"/>
+    <search-path type="shlib"  path="Reductions/IMAGE"/>
+    <search-path type="shlib"  path="Reductions"/>
+    <search-path type="shlib"  path="QNX_TARGET/PLATFORM/lib"/>
+    <search-path type="shlib"  path="QNX_TARGET/PLATFORM/usr/lib"/>
+    <search-path type="shlib"  path="QNX_TARGET/PLATFORM/usr/photon/lib"/>
+    <search-path type="other"  path="WORKSPACE/bsp-TI-omap3730-Beagle-xm-src/install/PLATFORM/etc"/>
+    <search-path type="other"  path="WORKSPACE/bsp-TI-omap3730-Beagle-xm-src/install/etc"/>
+    <search-path type="other"  path="WORKSPACE/bsp-TI-omap3730-Beagle-xm-src/install/usr/photon"/>
+    <search-path type="other"  path="WORKSPACE/bsp-TI-omap3730-Beagle-xm-src/install/usr/lib"/>
+    <search-path type="other"  path="WORKSPACE/bsp-TI-omap3730-Beagle-xm-src/install/usr/share"/>
+    <search-path type="other"  path="Overrides/IMAGE"/>
+    <search-path type="other"  path="Overrides"/>
+    <search-path type="other"  path="QNX_TARGET/PLATFORM/etc"/>
+    <search-path type="other"  path="QNX_TARGET/etc"/>
+    <search-path type="other"  path="QNX_TARGET/usr/photon"/>
+    <search-path type="other"  path="QNX_TARGET/usr/lib"/>
+    <search-path type="other"  path="QNX_TARGET/usr/share"/>
+    <search-path type="system"  path="WORKSPACE/bsp-TI-omap3730-Beagle-xm-src/install/PLATFORM/boot/sys"/>
+    <search-path type="system"  path="Overrides/IMAGE"/>
+    <search-path type="system"  path="Overrides"/>
+    <search-path type="system"  path="QNX_TARGET/PLATFORM/boot/sys"/>
+    <optimizations type="remove_unused"/>
+    <optimizations type="add_missing"/>
+    <optimizations type="system_diet"/>
+    <image-combine iplEnable="false"
+                   iplFileName=""
+                   iplPadSize=""
+                   efsEnable="false"
+                   imagesToCombineWith=""
+                   mountXIS="false"
+                   efsAlignment=""
+                   finalEnable="false"
+                   finalOffset=""
+                   finalPadding=""
+                   finalSupressResetVector="false"
+                   finalFormat=""
+    />
+</builder-project-properties>

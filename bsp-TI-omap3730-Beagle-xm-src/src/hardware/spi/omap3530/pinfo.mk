@@ -1,0 +1,3 @@
+define PINFO
+PINFO DESCRIPTION=OMAP3530 McSPI driver
+endef

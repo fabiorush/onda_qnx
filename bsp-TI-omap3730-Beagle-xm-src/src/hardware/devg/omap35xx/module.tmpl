@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<module name="devg-omap35xx">
+	<type>Element</type>
+	<classification>Driver</classification>
+
+	<description>
+			<short>Graphics Driver for the LCD controller on the TI OMAP35xx board</short>
+	        <abstract>
+				<![CDATA[The devg-omap35xx shared object is responsible for configuring and operating the LCD controller on the Texas Instruments OMAP3530 board.]]>
+	        </abstract>
+	</description>
+
+	<supports>
+		<availability>
+				<cpu isa="arm"><byteOrder>le</byteOrder></cpu>
+				<cpu isa="arm"><byteOrder>le.v7</byteOrder></cpu>
+		</availability>
+	</supports>
+
+	<source available="false">
+		<location type="">.</location>
+	</source>
+	<GroupOwner>gui</GroupOwner>
+	<RuntimeComponent>Neutrino RTOS</RuntimeComponent>
+
+
+	<contents>
+		<component id="omap35xx" generated="true">
+			<location basedir="{os}/{cpu}/dll{.:endian}"
+				 runtime="true">devg-omap35xx.so</location>
+		</component>
+	</contents>
+
+	<requires>
+		<part build="true" location="lib/ffb"/>
+		<part build="true" location="lib/disputil"/>
+		<part build="true" location="lib/cache"/>
+		<part build="false" location="hardware/devg"/>
+	</requires>
+
+</module>
