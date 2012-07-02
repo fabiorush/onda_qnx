@@ -643,7 +643,8 @@ telnet stream tcp nowait root /usr/sbin/telnetd in.telnetd
 ftp stream tcp nowait root /usr/sbin/ftpd in.ftpd -l
 #shell stream tcp nowait root /bin/rshd in.rshd
 #login stream tcp nowait root /bin/rlogind in.rlogind
-#tftp dgram udp wait ftp /bin/tftpd in.tftpd    </item>
+#tftp dgram udp wait ftp /bin/tftpd in.tftpd
+    </item>
     <item type="file"
           name="passwd"
           enabled="true"
@@ -736,7 +737,8 @@ ftp stream tcp nowait root /usr/sbin/ftpd in.ftpd -l
           optional="true"
           perms="0777"
           raw="false">
-root deny    </item>
+root deny
+    </item>
     <item type="symlink"
           name="ftp"
           image="bsp-TI-omap3730-Beagle-xm"
@@ -1114,7 +1116,8 @@ root deny    </item>
           raw="false">
 [img_codec_jpg.so]
 mime=image/jpeg:image/jpg:image/jp_:application/jpg:application/x-jpg:image/pjpeg:image/pipeg:image/vnd.swiftview-jpeg:image/x-xbitmap
-ext=jpg:jpeg    </item>
+ext=jpg:jpeg
+    </item>
     <item type="binary"
           name="gf_splash"
           enabled="true"
@@ -1680,32 +1683,6 @@ ext=jpg:jpeg    </item>
           image="bsp-TI-omap3730-Beagle-xm"
           location="/proc/boot"
           buildpath=""
-          data_uip="false"
-          code_uip="true"
-          uid="0"
-          gid="0"
-          optional="true"
-          perms="0777"
-          raw="false"/>
-    <item type="binary"
-          name="ps"
-          enabled="true"
-          image="bsp-TI-omap3730-Beagle-xm"
-          location="/proc/boot"
-          buildpath=""
-          data_uip="false"
-          code_uip="true"
-          uid="0"
-          gid="0"
-          optional="true"
-          perms="0777"
-          raw="false"/>
-    <item type="binary"
-          name="Teste"
-          enabled="true"
-          image="bsp-TI-omap3730-Beagle-xm"
-          location="/proc/boot"
-          buildpath="WORKSPACE/Teste/arm/o-le-v7"
           data_uip="false"
           code_uip="true"
           uid="0"

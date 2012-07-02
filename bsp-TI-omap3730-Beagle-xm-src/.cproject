@@ -3,8 +3,8 @@
 
 <cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
 <storageModule moduleId="org.eclipse.cdt.core.settings">
-<cconfiguration id="com.qnx.qcc.toolChain.1750074528">
-<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.qnx.qcc.toolChain.1750074528" moduleId="org.eclipse.cdt.core.settings" name="QNX QCC">
+<cconfiguration id="com.qnx.qcc.toolChain.351150225">
+<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.qnx.qcc.toolChain.351150225" moduleId="org.eclipse.cdt.core.settings" name="QNX QCC">
 <externalSettings/>
 <extensions>
 <extension id="com.qnx.tools.ide.qde.core.QDEBynaryParser" point="org.eclipse.cdt.core.BinaryParser"/>
@@ -12,21 +12,20 @@
 <extension id="org.eclipse.cdt.core.MakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 </extensions>
 </storageModule>
-<storageModule moduleId="org.eclipse.cdt.core.pathentry"/>
 <storageModule moduleId="cdtBuildSystem" version="4.0.0">
-<configuration artifactName="bsp-TI-omap3730-Beagle-xm-src" buildProperties="" id="com.qnx.qcc.toolChain.1750074528" name="QNX QCC" parent="org.eclipse.cdt.build.core.emptycfg">
-<folderInfo id="com.qnx.qcc.toolChain.1750074528.394490573" name="/" resourcePath="">
-<toolChain id="com.qnx.qcc.toolChain.1187646540" name="com.qnx.qcc.toolChain" superClass="com.qnx.qcc.toolChain">
-<option id="com.qnx.qcc.option.os.107701779" name="Target OS:" superClass="com.qnx.qcc.option.os"/>
-<option id="com.qnx.qcc.option.cpu.1747887698" name="Target CPU:" superClass="com.qnx.qcc.option.cpu"/>
-<option id="com.qnx.qcc.option.compiler.968216211" name="Compiler:" superClass="com.qnx.qcc.option.compiler"/>
-<option id="com.qnx.qcc.option.runtime.766648436" name="Runtime:" superClass="com.qnx.qcc.option.runtime"/>
-<targetPlatform archList="all" binaryParser="com.qnx.tools.ide.qde.core.QDEBynaryParser" id="com.qnx.qcc.targetPlatform.1416434092" osList="all" superClass="com.qnx.qcc.targetPlatform"/>
-<builder id="com.qnx.qcc.toolChain.1750074528.61828882" managedBuildOn="false" name="Gnu Make Builder.Preference Configuration" superClass="org.eclipse.cdt.build.core.settings.default.builder"/>
-<tool id="com.qnx.qcc.tool.compiler.625112005" name="QCC Compiler" superClass="com.qnx.qcc.tool.compiler"/>
-<tool id="com.qnx.qcc.tool.assembler.1976950170" name="QCC Assembler" superClass="com.qnx.qcc.tool.assembler"/>
-<tool id="com.qnx.qcc.tool.linker.1795630287" name="QCC Linker" superClass="com.qnx.qcc.tool.linker"/>
-<tool id="com.qnx.qcc.tool.archiver.1733261658" name="QCC Archiver" superClass="com.qnx.qcc.tool.archiver"/>
+<configuration artifactName="bsp-TI-omap3730-Beagle-xm-src" buildProperties="" id="com.qnx.qcc.toolChain.351150225" name="QNX QCC" parent="org.eclipse.cdt.build.core.emptycfg">
+<folderInfo id="com.qnx.qcc.toolChain.351150225.780336442" name="/" resourcePath="">
+<toolChain id="com.qnx.qcc.toolChain.1524437022" name="com.qnx.qcc.toolChain" superClass="com.qnx.qcc.toolChain">
+<option id="com.qnx.qcc.option.os.693678312" name="Target OS:" superClass="com.qnx.qcc.option.os"/>
+<option id="com.qnx.qcc.option.cpu.1076184020" name="Target CPU:" superClass="com.qnx.qcc.option.cpu"/>
+<option id="com.qnx.qcc.option.compiler.1720636696" name="Compiler:" superClass="com.qnx.qcc.option.compiler"/>
+<option id="com.qnx.qcc.option.runtime.460604664" name="Runtime:" superClass="com.qnx.qcc.option.runtime"/>
+<targetPlatform archList="all" binaryParser="com.qnx.tools.ide.qde.core.QDEBynaryParser" id="com.qnx.qcc.targetPlatform.577931168" osList="all" superClass="com.qnx.qcc.targetPlatform"/>
+<builder id="com.qnx.qcc.toolChain.351150225.1298093035" managedBuildOn="false" name="Gnu Make Builder.Preference Configuration" superClass="org.eclipse.cdt.build.core.settings.default.builder"/>
+<tool id="com.qnx.qcc.tool.compiler.419307480" name="QCC Compiler" superClass="com.qnx.qcc.tool.compiler"/>
+<tool id="com.qnx.qcc.tool.assembler.454738893" name="QCC Assembler" superClass="com.qnx.qcc.tool.assembler"/>
+<tool id="com.qnx.qcc.tool.linker.843566680" name="QCC Linker" superClass="com.qnx.qcc.tool.linker"/>
+<tool id="com.qnx.qcc.tool.archiver.560366799" name="QCC Archiver" superClass="com.qnx.qcc.tool.archiver"/>
 </toolChain>
 </folderInfo>
 </configuration>
@@ -133,7 +132,7 @@
 <parser enabled="true"/>
 </scannerInfoProvider>
 </profile>
-<scannerConfigBuildInfo instanceId="com.qnx.qcc.toolChain.1750074528">
+<scannerConfigBuildInfo instanceId="com.qnx.qcc.toolChain.351150225">
 <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.qnx.tools.ide.qde.managedbuilder.core.qccScannerInfo"/>
 <profile id="com.qnx.tools.ide.qde.managedbuilder.core.qccScannerInfo">
 <buildOutputProvider>
@@ -241,6 +240,6 @@
 </cconfiguration>
 </storageModule>
 <storageModule moduleId="cdtBuildSystem" version="4.0.0">
-<project id="bsp-TI-omap3730-Beagle-xm-src.null.1289506555" name="bsp-TI-omap3730-Beagle-xm-src"/>
+<project id="bsp-TI-omap3730-Beagle-xm-src.null.2029624183" name="bsp-TI-omap3730-Beagle-xm-src"/>
 </storageModule>
 </cproject>

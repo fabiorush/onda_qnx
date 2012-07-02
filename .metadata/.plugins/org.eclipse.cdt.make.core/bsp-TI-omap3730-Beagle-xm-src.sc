@@ -2,7 +2,7 @@
 <?scdStore version="2"?>
 
 <scannerInfo id="org.eclipse.cdt.make.core.discoveredScannerInfo">
-<instance id="com.qnx.qcc.toolChain.1750074528">
+<instance id="com.qnx.qcc.toolChain.351150225">
 <collector id="org.eclipse.cdt.make.core.PerProjectSICollector">
 <includePath path="C:/QNX650/target/qnx6/usr/include"/>
 <includePath path="C:/QNX650/host/win32/x86/usr/lib/gcc/i486-pc-nto-qnx6.5.0/4.4.2/include"/>
