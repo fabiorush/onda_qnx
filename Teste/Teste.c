@@ -13,31 +13,110 @@
 
 #define MY_PULSE_CODE   _PULSE_CODE_MINAVAIL
 
+#define	OMAP2420_GPIO_REVISION		0x00
+#define	OMAP2420_GPIO_SYSCONFIG		0x10
+#define	OMAP2420_GPIO_SYSSTATUS		0x14
+#define	OMAP2420_GPIO_IRQSTATUS1	0x18
+#define	OMAP2420_GPIO_IRQENABLE1	0x1C
+#define	OMAP2420_GPIO_WAKEUPENABLE	0x20
+#define	OMAP2420_GPIO_IRQSTATUS2	0x28
+#define	OMAP2420_GPIO_IRQENABLE2	0x2C
+#define	OMAP2420_GPIO_CTRL			0x30
+#define	OMAP2420_GPIO_OE			0x34
+#define	OMAP2420_GPIO_DATAIN		0x38
+#define	OMAP2420_GPIO_DATAOUT		0x3C
+#define	OMAP2420_GPIO_LEVELDETECT0	0x40
+#define	OMAP2420_GPIO_LEVELDETECT1	0x44
+#define	OMAP2420_GPIO_RISINGDETECT	0x48
+#define	OMAP2420_GPIO_FALLINGDETECT	0x4C
+#define	OMAP2420_GPIO_DEBOUNCENABLE	0x50
+#define	OMAP2420_GPIO_DEBOUNCINGTIME	0x54
+#define	OMAP2420_GPIO_CLEARIRQENABLE1	0x60
+#define	OMAP2420_GPIO_SETIRQENABLE1	0x64
+#define	OMAP2420_GPIO_CLEARIRQENABLE2	0x70
+#define	OMAP2420_GPIO_SETIRQENABLE2	0x74
+#define	OMAP2420_GPIO_CLEARWKUENA	0x80
+#define	OMAP2420_GPIO_SETWKUENA		0x84
+#define	OMAP2420_GPIO_CLEARDATAOUT	0x90
+#define	OMAP2420_GPIO_SETDATAOUT	0x94
+
 struct sigevent *intTeste (void *, int);
 struct sigevent event;
-uintptr_t gpt3, gpio5, conf;
-int t=0;
+
+int pincount = 0;
+int interval = 10;
+int pwm_enable = 0;
+
+uintptr_t gpio5, sys, /*gpt3,*/ gpt9;
+
+int t = 0;
+
+struct sigevent *gpio_isr_handler(void *args, int i)
+{
+	//(void)args;
+	if (in32(gpio5 + OMAP2420_GPIO_DATAIN) & (1 << 10)) {
+		out32(gpt9 + OMAP3530_GPT_TCLR, (1<<12) | (1<<10) | (1<<7));
+		out32(gpt9 + OMAP3530_GPT_TISR, 2);
+
+		/* set the pin 139 */
+		out32(gpio5 + OMAP2420_GPIO_SETDATAOUT, (1 << 11));
+	} else {
+		/* clear the pin 139*/
+		out32(gpio5 + OMAP2420_GPIO_CLEARDATAOUT, (1 << 11));
+
+		/* setting the initial timer counter value
+		 * cada tick é 80ns */
+		unsigned int t = 0xffffffff - ((interval*1000)/77);
+
+		out32(gpt9 + OMAP3530_GPT_TLDR, t);
+		out32(gpt9 + OMAP3530_GPT_TCRR, t);
+
+		/* starting timer with PWM */
+		out32(gpt9 + OMAP3530_GPT_TCLR, 3 | (1<<12) | (1<<10)); //-- PWM
+
+		t = 0;
+		pincount++;
+	}
+	out32(gpio5 + OMAP2420_GPIO_IRQSTATUS1, 1 << 10);
+
+	return NULL;//&event;
+}
+
+struct sigevent *timer_isr_handler(void *args, int i)
+{
+	//(void)data;
+	if (t)
+		out32(gpio5 + OMAP2420_GPIO_CLEARDATAOUT, (1 << 11));
+	else
+		out32(gpio5 + OMAP2420_GPIO_SETDATAOUT, (1 << 11));
+
+	t = (~t) & 1;
+	//out32(gpt3 + OMAP3530_GPT_TISR, 2);
+	out32(gpt9 + OMAP3530_GPT_TISR, 2);
+
+	return NULL;//&event;
+}
 
 int main(int argc, char *argv[]) {
-	//FILE *teste = fopen("/tmp/teste.txt","w");
-	uint32_t l, i = 0;
-	int id;
+	uint32_t l;
+	int id, id2;
 
 	printf("Welcome ttto the QNX Momentics IDE\n");
-	//fclose(teste);*/
+
 	if (ThreadCtl(_NTO_TCTL_IO, 0) < 0) {
 		perror(NULL);
 		return -1;
 	}
 
+	printf("Passou1\n");
+
 	/* attach GPIO interrupt */
-//	id = InterruptAttach (33, intTeste, NULL, 0, 0);
+	id = InterruptAttach (33, gpio_isr_handler, NULL, 0, _NTO_INTR_FLAGS_PROCESS);
 
 	/* attach timer interrupt */
-	id = InterruptAttach (39, intTeste, NULL, 0,  _NTO_INTR_FLAGS_PROCESS);
-	//GPIO_DATAOUT: 0x03C 0x4905603C
-	//GPIO_CLEARDATAOUT : 0x090 0x49056090
-	//GPIO_SETDATAOUT: 0x094 0x49056094
+	id2 = InterruptAttach (45, timer_isr_handler, NULL, 0,  _NTO_INTR_FLAGS_PROCESS);
+
+	printf("Passou2\n");
 
 	gpio5 = mmap_device_io(OMAP3530_GPIO_SIZE, OMAP3530_GPIO5_BASE);
 	if (gpio5 == MAP_DEVICE_FAILED) {
@@ -45,147 +124,66 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	//dataout = mmap_device_io(4, 0x49056034);
-	//if (dataout == MAP_DEVICE_FAILED) {
-	gpt3 = mmap_device_io(OMAP3530_GPT_SIZE, OMAP3530_GPT3_BASE);
-	//gpt3 = mmap_device_io(OMAP3530_GPT_SIZE, OMAP3530_GPT9_BASE);
-	if (gpt3 == MAP_DEVICE_FAILED) {
+	//gpt3 = mmap_device_io(OMAP3530_GPT_SIZE, OMAP3530_GPT3_BASE);
+	gpt9 = mmap_device_io(OMAP3530_GPT_SIZE, OMAP3530_GPT9_BASE);
+	if (gpt9 == MAP_DEVICE_FAILED) {
 		perror(NULL);
 		return -1;
 	}
 
-	conf = mmap_device_io(OMAP3530_SYSCTL_SIZE, OMAP3530_SYSCTL_BASE);
-	if (conf == MAP_DEVICE_FAILED) {
+	sys = mmap_device_io(OMAP3530_SYSCTL_SIZE, OMAP3530_SYSCTL_BASE);
+	if (sys == MAP_DEVICE_FAILED) {
 		perror(NULL);
 		return -1;
 	}
 
-	out32(gpio5 + OMAP2420_GPIO_SYSCONFIG, (1<<3));
-	out32(gpio5 + OMAP2420_GPIO_CTRL, 0);
+	printf("Passou1\n");
 
-	sleep(2);
+	/* selecting mode 4 function - GPIO 139
+	 * selecting pullup and mode 4 function - GPIO 138 */
+#define SYS_CONF	((4 << 16) | ((1 << 8) | (1<<3) | 4))
+#define SYS_MASK	~(0x10F010F)
+	l = (in32(sys + 0x168) &  SYS_MASK) | SYS_CONF;
+	//l = (in32(sys + 0x168) & ~(7<<16) ) | (4 << 16);
+	//out32(sys + 0x168, ((1<<3 | 4) << 16) | (1<<3) | 4);
+	out32(sys + 0x168, l);
 
-	printf("OMAP2420_GPIO_SYSCONFIG: %x\n", in32(gpio5 + OMAP2420_GPIO_SYSCONFIG));
-	printf("OMAP2420_GPIO_CTRL: %x\n", in32(gpio5 + OMAP2420_GPIO_CTRL));
+	/* setting mode 2 - PWM */
+	l = (in32(sys + 0x174) & ~7 ) | 2;
+	out32(sys + 0x174, l);
 
-	/* setting the PIN 139 to output */
-	l = in32(gpio5 + OMAP2420_GPIO_OE) & ~(1 << 11);
+	/* setting the PIN 138 to input
+	 * setting the PIN 139 to output */
+	l = (in32(gpio5 + OMAP2420_GPIO_OE) & ~(1 << 11)) | 1 << 10;
 	out32(gpio5 + OMAP2420_GPIO_OE, l);
 
-	/* setting the PIN 139 to output */
-	out32(gpio5 + OMAP2420_GPIO_SETDATAOUT, (1 << 11));
-	out32(gpio5 + OMAP2420_GPIO_CLEARDATAOUT, (1 << 11));
-	out32(gpio5 + OMAP2420_GPIO_SETDATAOUT, (1 << 11));
-	out32(gpio5 + OMAP2420_GPIO_CLEARDATAOUT, (1 << 11));
-	out32(gpio5 + OMAP2420_GPIO_SETDATAOUT, (1 << 11));
-	out32(gpio5 + OMAP2420_GPIO_CLEARDATAOUT, (1 << 11));
-	out32(gpio5 + OMAP2420_GPIO_SETDATAOUT, (1 << 11));
-	out32(gpio5 + OMAP2420_GPIO_CLEARDATAOUT, (1 << 11));
-	out32(gpio5 + OMAP2420_GPIO_SETDATAOUT, (1 << 11));
-	out32(gpio5 + OMAP2420_GPIO_CLEARDATAOUT, (1 << 11));
-	out32(gpio5 + OMAP2420_GPIO_SETDATAOUT, (1 << 11));
-	out32(gpio5 + OMAP2420_GPIO_CLEARDATAOUT, (1 << 11));
+	/* enabling interrupt on both levels on GPIO 139 */
+	out32(gpio5 + OMAP2420_GPIO_RISINGDETECT, l << 10);
+	out32(gpio5 + OMAP2420_GPIO_FALLINGDETECT, l << 10);
+	out32(gpio5 + OMAP2420_GPIO_SETIRQENABLE1, l << 10);
 
-	return EXIT_SUCCESS;
-	/* setting the PIN to PWM
-	 *
-	 * Mode 2:
-	 *
-	 */
-//
-//	l = (in32(conf + 0x174) & ~7 ) | 2;
-//	out32(conf + 0x174, l);
-
-	/* stopping timer */
-	out32(gpt3 + OMAP3530_GPT_TCLR, 0);
-
-	sleep(1);
-
-	/* setting the initial timer counter value
-	 * cada tick é 80ns
-	 */
-//	out32(gpt3 + OMAP3530_GPT_TLDR, 0xffffffed);
-//	out32(gpt3 + OMAP3530_GPT_TLDR, 0xfffffff3);
-//	out32(gpt3 + OMAP3530_GPT_TCRR, 0xfffffff3);
-	out32(gpt3 + OMAP3530_GPT_TLDR, 0xffffff80);
-	out32(gpt3 + OMAP3530_GPT_TCRR, 0xffffff80);
-//	out32(gpt3 + OMAP3530_GPT_TLDR, 0xffffff00);
-//	out32(gpt3 + OMAP3530_GPT_TCRR, 0xffffff00);
+	/* make sure timer has stop */
+	//out32(gpt3 + OMAP3530_GPT_TCLR, 0);
+	out32(gpt9 + OMAP3530_GPT_TCLR, 0);
 
 	/* enabling the interrupt */
-//	out32(gpt3 + OMAP3530_GPT_TCLR, 0);
-	out32(gpt3 + OMAP3530_GPT_TIER, 2);
+	out32(gpt9 + OMAP3530_GPT_TIER, 2); //comentar se PWM
 
-	sleep(1);
+	/* configuring PWM */
+	out32(gpt9 + OMAP3530_GPT_TCLR, (1<<12) | (1<<10) | (1<<7)); //-- PWM
 
-	/* starting timer */
-	out32(gpt3 + OMAP3530_GPT_TCLR, 3);
-	/* (1<<12) - toggle
-	 * [11:10] - 0x1: Overflow trigger (1<<10)
-	 * 3 start and reload
-	 */
-//	out32(gpt3 + OMAP3530_GPT_TCLR, 3 | (1<<12) | (1<<10));
-
-	//	l = in32(gpt3 + OMAP3530_GPT_TISTAT);
-//	printf("OMAP3530_GPT_TLDR: %x\n", in32(gpt3 + OMAP3530_GPT_TLDR));
-//	printf("OMAP3530_GPT_TCRR: %x\n", in32(gpt3 + OMAP3530_GPT_TCRR));
-//	for (;;)
-//	while (in32(gpt3 + OMAP3530_GPT_TCRR) != 0)
-//		printf("OMAP3530_GPT_TCRR: %x\n", in32(gpt3 + OMAP3530_GPT_TCRR));
-	//printf("OMAP3530_GPT_TCLR: %x\n", l);
-
-//	l = in32(conf + OMAP3530_SYSCTL_PADCONF(78)) & ~(18 << 16);
-//	out32(conf + OMAP3530_SYSCTL_PADCONF(78), l);
-
-//	l = in32(gpio5 + OMAP2420_GPIO_SETDATAOUT) & ~(1 << 11);
-//	l = in32(gpio5 + OMAP2420_GPIO_SETDATAOUT) | (1 << 11);
-//	out32(gpio5 + OMAP2420_GPIO_SETDATAOUT, l);
-
-//	l = in32(gpio5 + OMAP2420_GPIO_RISINGDETECT) | (1 << 11);
-//	out32(gpio5 + OMAP2420_GPIO_RISINGDETECT, l);
-//
-//	l = in32(gpio5 + OMAP2420_GPIO_FALLINGDETECT) | (1 << 11);
-//	out32(gpio5 + OMAP2420_GPIO_FALLINGDETECT, l);
-//
-//	out32(gpio5 + OMAP2420_GPIO_SETIRQENABLE1, (1 << 11));
-
+	out32(gpio5 + OMAP2420_GPIO_SETDATAOUT, (1 << 11));
 
 	//return EXIT_SUCCESS;
 	/* precisa definir a função de irq */
 	printf("Esperando interrupção\n");
-	sleep(10);
-	out32(gpt3 + OMAP3530_GPT_TCLR, 0);
-	out32(gpt3 + OMAP3530_GPT_TIER, 0);
+	sleep(30);
+	out32(gpt9 + OMAP3530_GPT_TCLR, 0);
+	out32(gpt9 + OMAP3530_GPT_TIER, 0);
 	InterruptDetach (id);
+	InterruptDetach (id2);
 	printf("Fim\n");
-
-//	for (;;) {
-//		int t=0;
-//		InterruptWait(NULL, NULL);
-//		printf("Interrupcao acionada\n");
-//		if (t)
-//			out32(gpio5 + OMAP2420_GPIO_CLEARDATAOUT, (1 << 11));
-//		else
-//			out32(gpio5 + OMAP2420_GPIO_SETDATAOUT, (1 << 11));
-//
-//		t = (~t) & 1;
-//	}
 
 	return EXIT_SUCCESS;
 }
 
-struct sigevent *intTeste (void *args, int i)
-{
-	InterruptDisable();
-//	out32(gpio5 + OMAP2420_GPIO_IRQSTATUS1, (1 << 11));
-//	out32(gpt3 + OMAP3530_GPT_TIER, 2);
-	if (t)
-		out32(gpio5 + OMAP2420_GPIO_CLEARDATAOUT, (1 << 11));
-	else
-		out32(gpio5 + OMAP2420_GPIO_SETDATAOUT, (1 << 11));
-
-	t = (~t) & 1;
-	out32(gpt3 + OMAP3530_GPT_TISR, 2);
-	InterruptEnable();
-	return NULL;//&event;
-}

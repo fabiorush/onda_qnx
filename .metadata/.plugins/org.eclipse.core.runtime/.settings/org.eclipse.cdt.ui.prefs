@@ -1,6 +1,0 @@
-#Tue May 08 11:08:44 BRT 2012
-spelling_locale_initialized=true
-useAnnotationsPrefPage=true
-eclipse.preferences.version=1
-wizard.preferred.toolchains=com.qnx.qcc.toolChain com.qnx.qcc.toolChain.exe.coverage com.qnx.qcc.toolChain.sharedLib.coverage com.qnx.qcc.toolChain.staticLib.coverage
-useQuickDiffPrefPage=true

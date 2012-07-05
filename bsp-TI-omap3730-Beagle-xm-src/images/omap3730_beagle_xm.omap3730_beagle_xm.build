@@ -106,7 +106,8 @@
 	## RTC driver (TW4030) utility
 	##  - It requires I2C driver
 	#######################################################################
-	display_msg Setting OS Clock from on-board RTC	
+	display_msg Setting OS Clock from on-board RTC
+	#rtc hw /dev/i2c0
 	rtc hw tps659xx
 	# date
 
@@ -132,13 +133,15 @@
 	# The above mmc init will automount the MMC card; this message just informs
 	# the user of that fact.
 	display_msg Now mounting MMC/SD as hd0 in filesys as read/write
+	#mount -t dos -w /dev/hd0t14 /fs/hd0
 
 	#######################################################################
 	## SPI driver
 	##  - Required for TSC
 	#######################################################################
 	display_msg Starting SPI driver...
-	spi-master -u0 -d omap3530 base=0x480BA000,clock=48000000,irq=48,channel=4,bitrate=125000
+    spi-master -u0 -d omap3530 base=0x480BA000,clock=48000000,irq=48,channel=4,bitrate=125000
+	#spi-master -d omap3530
 	waitfor /dev/spi0
 
 
@@ -191,11 +194,11 @@
 
 	#######################################################################
 	## SGX GPU driver
-	## Note:  the Composition_Manager patch should be install first
+	## Note:  the Composition_Manager patch should be installed first
 	#######################################################################
-	# display_msg Starting SGX GPU driver...
-	# GRAPHICS_ROOT=/usr/lib/graphics/omap3730
-	# /usr/lib/graphics/omap3730/pvrsrvd
+	#display_msg Starting SGX GPU driver...
+	#GRAPHICS_ROOT=/usr/lib/graphics/omap3730
+	#/usr/lib/graphics/omap3730/pvrsrvd
 
 	#######################################################################
 	## SDIO WIFI driver
@@ -211,7 +214,7 @@
 	TERM=qansi
 	HOME=/
 	PATH=:/proc/boot:/sbin:/bin:/usr/sbin:/usr/bin:/opt/bin
-	LD_LIBRARY_PATH=:/proc/boot:/lib:/usr/lib:/lib/dll:/opt/lib
+	LD_LIBRARY_PATH=:/proc/boot:/lib:/usr/lib:/lib/dll:/opt/lib:/usr/lib/graphics
 
 	#######################################################################
 	## Watchdog utility
@@ -317,32 +320,33 @@ lib/libFF-T2K.so.3=libFF-T2K.so.3
 ## Note:  the Composition_Manager patch must be installed for SGX support
 ##   Refer to the BSP release notes for how to install the patch into the BSP.
 ###########################################################################
-#/usr/lib/graphics/omap3730/libglslcompiler.so=../install/armle-v7/usr/lib/graphics/omap3730/libglslcompiler.so
-#/usr/lib/graphics/omap3730/libIMGegl.so=../install/armle-v7/usr/lib/graphics/omap3730/libIMGegl.so
-#/usr/lib/graphics/omap3730/libImgGLESv1_CM.so=../install/armle-v7/usr/lib/graphics/omap3730/libImgGLESv1_CM.so
-#/usr/lib/graphics/omap3730/libImgGLESv2.so=../install/armle-v7/usr/lib/graphics/omap3730/libImgGLESv2.so
-#/usr/lib/graphics/omap3730/libImgOpenVG.so=../install/armle-v7/usr/lib/graphics/omap3730/libImgOpenVG.so
-#/usr/lib/graphics/omap3730/libpvr2d.so=../install/armle-v7/usr/lib/graphics/omap3730/libpvr2d.so
-#/usr/lib/graphics/omap3730/libsrv_um.so=../install/armle-v7/usr/lib/graphics/omap3730/libsrv_um.so
-#/usr/lib/graphics/omap3730/libWFDdevg.so=../install/armle-v7/usr/lib/graphics/omap3730/libWFDdevg.so
-#/usr/lib/graphics/omap3730/pvrsrvinit.so=../install/armle-v7/usr/lib/graphics/omap3730/pvrsrvinit.so
-#/usr/lib/graphics/omap3730/wsegl-gf.so=../install/armle-v7/usr/lib/graphics/omap3730/wsegl-gf.so
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/libglslcompiler.so=libglslcompiler.so
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/libIMGegl.so=libIMGegl.so
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/libImgGLESv1_CM.so=libImgGLESv1_CM.so
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/libImgGLESv2.so=libImgGLESv2.so
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/libImgOpenVG.so=libImgOpenVG.so
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/libpvr2d.so=libpvr2d.so
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/libsrv_um.so=libsrv_um.so
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/libWFDdevg.so=libWFDdevg.so
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/pvrsrvinit.so=pvrsrvinit.so
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/wsegl-gf.so=wsegl-gf.so
 
 
 ###########################################################################
 ## The following libraries are taken from the Composition_Manager patch.
 ##   Refer to the BSP release notes for how to install the patch into the BSP.
 ###########################################################################
-#/usr/lib/graphics/devg/libEGLdevg.so=${QNX_TARGET}/armle-v7/usr/lib/graphics/devg/libEGLdevg.so
-#/usr/lib/graphics/devg/libWFDdevg.so=${QNX_TARGET}/armle-v7/usr/lib/graphics/devg/libWFDdevg.so
-#/usr/lib/graphics/devg/libGLESv1_CLdevg.so=${QNX_TARGET}/armle-v7/usr/lib/graphics/devg/libGLESv1_CLdevg.so
-#/usr/lib/graphics/devg/libGLESv1_CMdevg.so=${QNX_TARGET}/armle-v7/usr/lib/graphics/devg/libGLESv1_CMdevg.so
-#/usr/lib/graphics/omap3730/libOpenVG.so.1=${QNX_TARGET}/armle-v7/usr/lib/libOpenVG.so.1
-#/usr/lib/graphics/omap3730/libGLESv2.so.1=${QNX_TARGET}/armle-v7/usr/lib/libGLESv2.so.1
-#libiow.so.1
-#libGLESv1_CM.so.1
-#libGLESv1_CL.so.1
-#libEGL.so.1
+#/usr/lib/graphics/devg/libEGLdevg.so=/home/qa/patches/650-2258/target/qnx6/armle-v7/usr/lib/graphics/devg/libEGLdevg.so
+#/usr/lib/graphics/devg/libWFDdevg.so=/home/qa/patches/650-2258/target/qnx6/armle-v7/usr/lib/graphics/devg/libWFDdevg.so
+#/usr/lib/graphics/devg/libGLESv1_CMdevg.so=/home/qa/patches/650-2258/target/qnx6/armle-v7/usr/lib/graphics/devg/libGLESv1_CMdevg.so
+#/usr/lib/graphics/devg/libGLESv1_CLdevg.so=/home/qa/patches/650-2258/target/qnx6/armle-v7/usr/lib/graphics/devg/libGLESv1_CLdevg.so
+
+/usr/lib/libOpenVG.so.1=${QNX_TARGET}/armle-v7/usr/lib/libOpenVG.so.1
+/usr/lib/libGLESv2.so.1=${QNX_TARGET}/armle-v7/usr/lib/libGLESv2.so.1
+libiow.so.1
+libGLESv1_CM.so.1
+libGLESv1_CL.so.1
+libEGL.so.1
 
 ###########################################################################
 ## uncomment for AUDIO driver
@@ -497,22 +501,8 @@ vsync
 egl-gears-lite
 io-display
 
-/etc/system/config/display.conf = {
-device \{
-    drivername=omap35xx
-    vid=0
-    did=0
-    modeopts=/etc/system/config/omap35xx.conf
-    display \{
-        xres=720
-	yres=400
-	refresh=60
-	pixel_format=rgb565
-    \}
- \}
-}
-
-/etc/system/config/omap35xx.conf = ../install/etc/system/config/omap35xx.conf
+[search=../install/etc/system/config] /etc/system/config/display.conf=display.conf
+[search=../install/etc/system/config] /etc/system/config/omap35xx.conf=omap35xx.conf
 
 /etc/system/config/img.conf ={
 [img_codec_jpg.so]
@@ -533,21 +523,22 @@ ext=jpg:jpeg
 #/usr/photon/font_repository/tt0611m_.ttf=${QNX_TARGET}/usr/photon/font_repository/tt0611m_.ttf
 #/usr/photon/font_repository/tt0582m_.ttf=${QNX_TARGET}/usr/photon/font_repository/tt0582m_.ttf
 
-#/usr/share/backdrops/1024x768/neutrino_02_1024x768.jpg=${QNX_TARGET}/usr/share/backdrops/1024x768/neutrino_02_1024x768.jpg
-#/usr/share/backdrops/1024x768/default.jpg=${QNX_TARGET}/usr/share/backdrops/1024x768/default.jpg
-/usr/share/backdrops/480x272/neutrino_02_480x272.jpg=../install/usr/share/backdrops/480x272/neutrino_02_480x272.jpg
-/usr/share/backdrops/720x400/neutrino_02_720x400.jpg=../install/usr/share/backdrops/720x400/neutrino_02_720x400.jpg
+#[search=../install/usr/share/backdrops/1024x768] /usr/share/backdrops/1024x768/neutrino_02_1024x768.jpg=neutrino_02_1024x768.jpg
+#[search=../install/usr/share/backdrops/1024x768] /usr/share/backdrops/1024x768/default.jpg=default.jpg
+[search=../install/usr/share/backdrops/480x272] /usr/share/backdrops/480x272/neutrino_02_480x272.jpg=neutrino_02_480x272.jpg
+[search=../install/usr/share/backdrops/720x400] /usr/share/backdrops/720x400/neutrino_02_720x400.jpg=neutrino_02_720x400.jpg
 
 
 ###########################################################################
 ## uncomment for SGX Graphics driver
 ##   The composition manager patch must be installed to use thse binaries.
 ###########################################################################
-#/usr/lib/graphics/omap3730/graphics.conf=../install/armle-v7/usr/lib/graphics/omap3730/graphics.conf
-#/usr/lib/graphics/omap3730/pvrsrvd=../install/armle-v7/usr/lib/graphics/omap3730/pvrsrvd
-#/usr/lib/graphics/omap3730/gles1-egl-gears-lite=${QNX_TARGET}/usr/src/apps/egl/demos/gles1-egl-gears-lite/nto/arm/o.le.v7/gles1-egl-gears-lite
-#/usr/lib/graphics/omap3730/gles2-egl-gears=${QNX_TARGET}/usr/src/apps/egl/demos/gles2-egl-gears/nto/arm/o.le.v7/gles2-egl-gears
-#/usr/lib/graphics/omap3730/vg-egl-tiger=${QNX_TARGET}/usr/src/apps/egl/demos/vg-egl-tiger/nto/arm/o.le.v7/vg-egl-tiger
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/graphics.conf=graphics.conf
+#[search=../install/armle-v7/usr/lib/graphics/omap3730] /usr/lib/graphics/omap3730/pvrsrvd=pvrsrvd
+# Graphics demo apps
+#/usr/bin/gles1-egl-gears-lite=/home/qa/graphic_driver_test/Patches/winmgr/armle-v7/usr/bin/gles1-egl-gears-lite
+#/usr/bin/gles2-egl-gears=/home/qa/graphic_driver_test/Patches/winmgr/armle-v7/usr/bin/gles2-egl-gears
+#/usr/bin/vg-egl-tiger=/home/qa/graphic_driver_test/Patches/winmgr/armle-v7/usr/bin/vg-egl-tiger
 
 ###########################################################################
 ## Image Loading
@@ -620,8 +611,6 @@ use
 ###########################################################################
 ## SPI libraries
 ###########################################################################
-/proc/boot/libspi-master.a = libspi-master.a
-/proc/boot/libspi-masterS.a = libspi-masterS.a
 [data=copy] /proc/boot/spi_test = spi_test
 
 ###########################################################################
@@ -754,12 +743,12 @@ use
 ##   libraries and binaries.
 ##
 ##   example buildfile commands:
-##     GRAPHICS_ROOT=/usr/lib/graphics/omap3530
-##     /usr/lib/graphics/omap3530/pvrsrvd
+##     GRAPHICS_ROOT=/usr/lib/graphics/omap3730
+##     /usr/lib/graphics/omap3730/pvrsrvd
 ##
 ##   The following configuration file is required to initialize the
 ##   display device:
-##     /usr/lib/graphics/omap3530/graphics.conf
+##     /usr/lib/graphics/omap3730/graphics.conf
 ##
 ##   required binaries:
 ##     pvrsrvd
@@ -1198,3 +1187,4 @@ use
 ## device:
 ##
 ###########################################################################
+
