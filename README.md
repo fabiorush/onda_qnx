@@ -6,9 +6,21 @@ fatload mmc 0 0x80100000 bsp-TI-omap3730-Beagle-xm.ifs; go 0x80100000
 fatload mmc 0 0x81000000 bootstrap_hello.uimage; go 0x81000000 
 fatload mmc 0 0x80ffffc0 l4linux; go 0x80100000
 fatload mmc 0 0x80ffffc0 bootstrap_L4Linux_ARM.uimage; go 0x81000000
+
+run onda_qnx
+
 ifconfig en0 192.168.1.2 netmask 255.255.255.0 up
 ifconfig en0 172.27.73.1 netmask 255.255.192.0 up
 ifconfig en0 192.168.137.2 netmask 255.255.255.0 up
+
+ifconfig en0 172.27.73.36 netmask 255.255.192.0 up
+ftpd
+
+chmod 755 /tmp/onda /tmp/client
+export HTTPD_ROOT_DIR=/tmp
+export HTTPD_ROOT_DOC=index.html
+ds &
+slinger -cse
 
 GPIO_139
 [31:0] I/O gpio_[159:128]
