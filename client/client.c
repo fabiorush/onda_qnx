@@ -37,21 +37,11 @@ int main(int argc, char *argv[]) {
     int value;
     int server_coid;
     size_t len;
+    int load = 0;
 
     printf(	"Content-Type: text/html\n\n"
-    		"<html><head><title>Teste</title></head>\n"
-    		"<body><h1>Teste</h1>\n");
-
-#if 0
-    clock_t future_clock, current_clock = clock();
-    future_clock = CLOCKS_PER_SEC * 10 + current_clock;
-
-    while (current_clock < future_clock) {
-    	current_clock = clock();
-    }
-
-	printf("Done!\n");
-#endif
+    		"<html><head><title>Configuração Onda</title></head>\n"
+    		"<body><h1>Configuração Onda</h1>\n");
 
 	if ((server_coid = name_open("onda", NAME_FLAG_ATTACH_GLOBAL)) == -1) {
 		printf("Falha na conexão com onda app</body></html>\n");
@@ -69,7 +59,8 @@ int main(int argc, char *argv[]) {
 			MsgSend(server_coid, &msg, sizeof(msg), &value, sizeof(value));
     	}
     	if (find_param(query_str, "cpuload=", NULL)) {
-    		/* start cpuload thread */
+    		/* get cpuload time */
+        	find_param(query_str, "seconds=", &load);
     	}
     }
 
@@ -77,7 +68,7 @@ int main(int argc, char *argv[]) {
 	msg.hdr.subtype = 0x55;
 
 	if (MsgSend(server_coid, &msg, sizeof(msg), &value, sizeof(value)) != -1) {
-		printf("Botao pressionado %d vezes\n", value);
+		printf("Bot&atilde;o pressionado %d vezes\n", value);
 	}
 
 	msg.hdr.type = 0x00;
@@ -85,8 +76,9 @@ int main(int argc, char *argv[]) {
 
 	if (MsgSend(server_coid, &msg, sizeof(msg), &value, sizeof(value)) != -1) {
 		printf(	"<form name=\"input\" action=\"client\" method=\"post\">\n"
-	    		"Onda interval: <input type=\"text\" name=\"interval\" value=\"%d\"/><br>\n"
-				"<input type=\"checkbox\" name=\"cpuload\" value=\"1\" />Load CPU<br>\n"
+	    		"Onda intervalo: <input type=\"text\" name=\"interval\" value=\"%d\"/><br>\n"
+				"<input type=\"checkbox\" name=\"cpuload\" value=\"1\" />Carga na CPU\n"
+				"<input type=\"text\" name=\"seconds\" value=\"0\"/><br>\n"
 	    		"<input type=\"submit\" value=\"Submit\" /></form>", value);
 	}
 
@@ -94,5 +86,15 @@ int main(int argc, char *argv[]) {
 
 	/* Close the connection */
 	name_close(server_coid);
+	fclose(stdout);
+
+    if (load) {
+		clock_t future_clock, current_clock = clock();
+	    future_clock = CLOCKS_PER_SEC * load + current_clock;
+
+	    while (current_clock < future_clock) {
+	    	current_clock = clock();
+	    }
+    }
     return EXIT_SUCCESS;
 }

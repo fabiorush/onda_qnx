@@ -18,8 +18,10 @@ ftpd
 gns -s
 
 chmod 755 /tmp/onda /tmp/client
-export HTTPD_ROOT_DIR=/tmp
+export HTTPD_ROOT_DIR=/fs/hd0/
 export HTTPD_ROOT_DOC=index.html
+export HTTPD_SCRIPTALIAS=/tmp
+HTTPD_SCRIPTALIAS 
 ds &
 slinger -cse
 

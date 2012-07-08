@@ -10,12 +10,8 @@
 #include <unistd.h>
 #include <sys/siginfo.h>
 #include <arm/omap3530.h>
-
-//#include <Pt.h>
 #include <sys/iofunc.h>
 #include <sys/dispatch.h>
-
-#define MY_PULSE_CODE   _PULSE_CODE_MINAVAIL
 
 #define	OMAP2420_GPIO_REVISION		0x00
 #define	OMAP2420_GPIO_SYSCONFIG		0x10
@@ -49,64 +45,11 @@
 
 int pincount = 1039;
 int interval = 10;
-//int pwm_enable = 0;
-
-
-uintptr_t gpio5, sys, /*gpt3,*/ gpt9;
-
+uintptr_t gpio5, sys, gpt9;
 int t = 0;
-
-/* Handle a message from a client: */
-//static PtConnectionMsgFunc_t msghandler;
-
-/*static void const *msghandler(PtConnectionServer_t *connection, void *data,
-		unsigned long type, void const *msgptr, unsigned msglen,
-		unsigned *reply_len) {
-	//struct MyMsg const *msg = (struct MyMsg const*) msgptr;
-	static int reply = 0;
-
-	switch (type) {
-	case 0x55:
-		puts("É um button_count read\n");
-		PtConnectionReply(connection, sizeof(pincount), &pincount);
-		break;
-
-	case 0x56:
-		puts("É um onda_interval read\n");
-		PtConnectionReply(connection, sizeof(interval), &interval);
-		break;
-
-	case 0x66:
-		puts("É um onda_interval write\n");
-		if (msglen > 0)
-			interval = *((int *)msgptr);
-		PtConnectionReply(connection, sizeof(interval), &interval);
-		break;
-
-	default:
-		puts("Não sei o q é\n");
-	}
-
-	*reply_len = sizeof(reply);
-	reply = type;
-	return &reply;
-}*/
-
-/* Set up a new connection: */
-/*static PtConnectorCallbackFunc_t connector_callback;
-
-static void connector_callback(PtConnector_t *connector,
-		PtConnectionServer_t *connection, void *data) {
-	static const PtConnectionMsgHandler_t handlers = { 0, msghandler };
-	if (PtConnectionAddMsgHandlers(connection, &handlers, 1) != 0) {
-		fputs("Unable to set up connection handler\n", stderr);
-		PtConnectionServerDestroy(connection);
-	}
-}*/
 
 struct sigevent *gpio_isr_handler(void *args, int i)
 {
-	//(void)args;
 	if (in32(gpio5 + OMAP2420_GPIO_DATAIN) & (1 << 10)) {
 		out32(gpt9 + OMAP3530_GPT_TCLR, (1<<12) | (1<<10) | (1<<7));
 		out32(gpt9 + OMAP3530_GPT_TISR, 2);
@@ -132,22 +75,20 @@ struct sigevent *gpio_isr_handler(void *args, int i)
 	}
 	out32(gpio5 + OMAP2420_GPIO_IRQSTATUS1, 1 << 10);
 
-	return NULL;//&event;
+	return NULL;
 }
 
 struct sigevent *timer_isr_handler(void *args, int i)
 {
-	//(void)data;
 	if (t)
 		out32(gpio5 + OMAP2420_GPIO_CLEARDATAOUT, (1 << 11));
 	else
 		out32(gpio5 + OMAP2420_GPIO_SETDATAOUT, (1 << 11));
 
 	t = (~t) & 1;
-	//out32(gpt3 + OMAP3530_GPT_TISR, 2);
 	out32(gpt9 + OMAP3530_GPT_TISR, 2);
 
-	return NULL;//&event;
+	return NULL;
 }
 
 /* We specify the header as being at least a pulse */
@@ -165,45 +106,14 @@ int main(int argc, char *argv[]) {
 	my_data_t msg;
 	int rcvid;
 
-	//ds_t ds_descriptor;
-	//char ovenID[7], oven_temp[MAXLEN], flag = 0;
-	//char buf[5];
 	name_attach_t *name;
 
-//	static const char name[] = "onda";
-
-	printf("Welcome ttto the QNX Momentics IDE\n");
+	printf("Welcome Onda\n");
 
 	if (ThreadCtl(_NTO_TCTL_IO, 0) < 0) {
 		perror(NULL);
 		return -1;
 	}
-
-	/*ds_descriptor = ds_register();
-	if (ds_descriptor == -1) {
-		perror("ds_register");
-		exit(1);
-	}
-
-	//strcpy(ovenID, "oven1");
-
-	if (ds_create(ds_descriptor, "button_count", 0, 0) == -1) {
-		perror("ds_create");
-		exit(1);
-	}
-
-	if (ds_create(ds_descriptor, "onda_interval", 0, 0) == -1) {
-		perror("ds_create");
-		exit(1);
-	}
-
-	sprintf(buf, "%d", pincount);
-	ds_set(ds_descriptor, "button_count", buf, 5);
-
-	sprintf(buf, "%d", interval);
-	ds_set(ds_descriptor, "onda_interval", buf, 5);*/
-
-	printf("Passou0\n");
 
 	name = name_attach(NULL, "onda", NAME_FLAG_ATTACH_GLOBAL);
 	if (name == NULL) {
@@ -211,15 +121,11 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	printf("Passou1\n");
-
 	/* attach GPIO interrupt */
 	id = InterruptAttach (33, gpio_isr_handler, NULL, 0, _NTO_INTR_FLAGS_PROCESS);
 
 	/* attach timer interrupt */
 	id2 = InterruptAttach (45, timer_isr_handler, NULL, 0,  _NTO_INTR_FLAGS_PROCESS);
-
-	printf("Passou2\n");
 
 	gpio5 = mmap_device_io(OMAP3530_GPIO_SIZE, OMAP3530_GPIO5_BASE);
 	if (gpio5 == MAP_DEVICE_FAILED) {
@@ -239,8 +145,6 @@ int main(int argc, char *argv[]) {
 		perror(NULL);
 		return -1;
 	}
-
-	printf("Passou1\n");
 
 	/* selecting mode 4 function - GPIO 139
 	 * selecting pullup and mode 4 function - GPIO 138 */
@@ -266,7 +170,6 @@ int main(int argc, char *argv[]) {
 	out32(gpio5 + OMAP2420_GPIO_SETIRQENABLE1, l << 10);
 
 	/* make sure timer has stop */
-	//out32(gpt3 + OMAP3530_GPT_TCLR, 0);
 	out32(gpt9 + OMAP3530_GPT_TCLR, 0);
 
 	/* enabling the interrupt */
@@ -277,18 +180,11 @@ int main(int argc, char *argv[]) {
 
 	out32(gpio5 + OMAP2420_GPIO_SETDATAOUT, (1 << 11));
 
-	//return EXIT_SUCCESS;
-	/* precisa definir a função de irq */
-	printf("Esperando interrupção\n");
-	/*while (1) {
-		ds_get(ds_descriptor, "onda_interval", buf, 5);
-		sscanf(buf, "%d", &interval);
-		sleep(1);
-	}*/
+	printf("Esperando requisições\n");
+
 	while (1) {
 		rcvid = MsgReceive(name->chid, &msg, sizeof(msg), NULL);
 
-		printf("MSGReceived\n");
 		if (rcvid == -1) {/* Error condition, exit */
 			break;
 		}
@@ -305,23 +201,19 @@ int main(int argc, char *argv[]) {
 		}
 		switch (msg.hdr.subtype) {
 		case 0x55:
-			puts("É um button_count read\n");
 			MsgReply(rcvid, EOK, &pincount, sizeof(pincount));
 			break;
 
 		case 0x65:
-			puts("É um onda_interval read\n");
 			MsgReply(rcvid, EOK, &interval, sizeof(interval));
 			break;
 
 		case 0x66:
-			puts("É um onda_interval write\n");
 			interval = msg.data;
 			MsgReply(rcvid, EOK, &interval, sizeof(interval));
 			break;
 
 		default:
-			puts("Não sei o q é\n");
 			MsgReply(rcvid, EOK, NULL, 0);
 		}
 	}
@@ -333,4 +225,3 @@ int main(int argc, char *argv[]) {
 
 	return EXIT_SUCCESS;
 }
-
