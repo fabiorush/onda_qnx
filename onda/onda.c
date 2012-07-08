@@ -43,7 +43,7 @@
 //struct sigevent *intTeste (void *, int);
 //struct sigevent event;
 
-int pincount = 1039;
+int pincount = 0;
 int interval = 10;
 uintptr_t gpio5, sys, gpt9;
 int t = 0;

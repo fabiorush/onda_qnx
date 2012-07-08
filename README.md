@@ -21,9 +21,10 @@ chmod 755 /tmp/onda /tmp/client
 export HTTPD_ROOT_DIR=/fs/hd0/
 export HTTPD_ROOT_DOC=index.html
 export HTTPD_SCRIPTALIAS=/tmp
-HTTPD_SCRIPTALIAS 
-ds &
+
 slinger -cse
+
+http://192.168.137.51/cgi-bin/client
 
 GPIO_139
 [31:0] I/O gpio_[159:128]
@@ -59,3 +60,6 @@ GPTIMER3 GPT3_IRQ M_IRQ_39
 
 while true; do echo teste; done
 
+-- Builder -- Para explicar o processo
+http://www.qnx.com/developers/docs/6.3.2/ide_en/user_guide/builder.html
+http://www.qnx.com/developers/docs/6.3.2/neutrino/building/building_nto.html#CONFIG

@@ -207,3 +207,15 @@ display_msg "Starting splash screen and egl-gears-lite..."
 reopen /dev/null
 [pri=1o] egl-gears-lite -layer=2 -width=300 -height=300 &
 /usr/bin/gf_splash -l 1 -f tt0419m_.ttf /usr/share/backdrops/720x400/neutrino_02_720x400.jpg &
+
+#######################################################################
+## Onda stuff
+#######################################################################
+HTTPD_ROOT_DIR=/home/www/
+HTTPD_ROOT_DOC=index.html
+HTTPD_SCRIPTALIAS=/home/cgi
+
+ftpd
+gns -s
+slinger -cse
+onda &
