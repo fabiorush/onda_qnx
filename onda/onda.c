@@ -40,9 +40,6 @@
 #define	OMAP2420_GPIO_CLEARDATAOUT	0x90
 #define	OMAP2420_GPIO_SETDATAOUT	0x94
 
-//struct sigevent *intTeste (void *, int);
-//struct sigevent event;
-
 int pincount = 0;
 int interval = 10;
 uintptr_t gpio5, sys, gpt9;
@@ -60,6 +57,9 @@ struct sigevent *gpio_isr_handler(void *args, int i)
 		/* clear the pin 139*/
 		out32(gpio5 + OMAP2420_GPIO_CLEARDATAOUT, (1 << 11));
 
+		t = 0;
+		pincount++;
+
 		/* setting the initial timer counter value
 		 * cada tick é 80ns */
 		unsigned int t = 0xffffffff - ((interval*1000)/77);
@@ -69,9 +69,6 @@ struct sigevent *gpio_isr_handler(void *args, int i)
 
 		/* starting timer with PWM */
 		out32(gpt9 + OMAP3530_GPT_TCLR, 3 | (1<<12) | (1<<10)); //-- PWM
-
-		t = 0;
-		pincount++;
 	}
 	out32(gpio5 + OMAP2420_GPIO_IRQSTATUS1, 1 << 10);
 
